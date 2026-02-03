@@ -1,28 +1,29 @@
-use axum::Router;
-use http;
+use crate::{adapters::http::app_state::AppState, infra::setup::init_tracing};
+use axum::{
+    http::{self, header, Method},
+    Router,
+};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use uuid::Uuid;
-
-use crate::{
-    adapters::http::app_state::AppState,
-    infra::setup::init_tracing,
-};
 
 pub fn create_app(app_state: AppState) -> Router {
     init_tracing();
 
+    let origins: Vec<http::HeaderValue> = app_state
+        .config
+        .cors_origins
+        .iter()
+        .map(|o| o.parse().expect("Invalid CORS origin"))
+        .collect();
+
     let cors = CorsLayer::new()
-        .allow_origin(
-            "http://10.17.0.106"
-                .parse::<http::HeaderValue>()
-                .unwrap(),
-        )
-        .allow_methods([http::Method::POST, http::Method::GET, http::Method::PATCH, http::Method::DELETE])
-        .allow_headers([])
+        .allow_origin(origins)
+        .allow_methods([Method::POST, Method::GET, Method::PATCH, Method::DELETE])
+        .allow_headers([header::CONTENT_TYPE])
         .allow_credentials(false);
 
     Router::new()
-        .merge(crate::adapters::http::routes::router())
+        .merge(crate::adapters::http::routes::router(app_state))
         .with_state(app_state)
         .layer(cors)
         .layer(

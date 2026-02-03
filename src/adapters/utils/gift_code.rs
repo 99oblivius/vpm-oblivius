@@ -1,5 +1,5 @@
 use rand::Rng;
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 const ALPHABET: &[u8] = b"23456789ABCDEFGHJKMNOPQRSTVWXYZ";
 const GROUP_SIZE: usize = 5;
@@ -20,12 +20,13 @@ fn calculate_checksum(bytes: &[u8]) -> usize {
 }
 
 pub fn verify_key(key: &str) -> bool {
-    let clean = key.chars()
+    let clean = key
+        .chars()
         .filter(|c| *c != '-')
         .flat_map(|c| c.to_uppercase())
         .collect();
 
-    if clean.len() != GROUP_SIZE * GROUP_COUNT  {
+    if clean.len() != GROUP_SIZE * GROUP_COUNT {
         return false;
     }
 
@@ -60,7 +61,8 @@ impl GiftCode {
         let checksum = calculate_checksum(&chars);
         chars.push(ALPHABET[checksum % n]);
 
-        let key = chars.chunks(GROUP_SIZE)
+        let key = chars
+            .chunks(GROUP_SIZE)
             .map(|chunk| String::from_utf8_lossy(chunk).to_string())
             .collect::<Vec<_>>()
             .join("-");

@@ -1,15 +1,12 @@
 use crate::{
     adapters::{
         http::app_state::AppState,
-        markets::Markets,
+        markets::{Markets, Payhip},
     },
     infra::{config::AppConfig, sqlite_database},
-    use_cases::{
-        redeem::RedeemUseCases,
-        code::CodeUseCases,
-    },
+    use_cases::{code::CodeUseCases, redeem::RedeemUseCases},
 };
-use tracing_subscriber::{EnvFilter, fmt};
+use tracing_subscriber::{filter::EnvFilter, fmt};
 
 use std::sync::Arc;
 
@@ -18,8 +15,10 @@ pub async fn init_state() -> anyhow::Result<AppState> {
 
     let sqlite_arc = Arc::new(sqlite_database().await?);
 
-
-    let markets = Markets::new();
+    let mut markets = Markets::new();
+    if let (Some(url), Some(key)) = (config.payhip_api_url.clone(), config.payhip_api_key.clone()) {
+        markets = markets.add(Box::new(Payhip::new(url, key)));
+    }
 
     let code_use_cases = CodeUseCases::new(sqlite_arc.clone());
     let redeem_use_cases = RedeemUseCases::new(Arc::new(markets), sqlite_arc.clone());
@@ -34,10 +33,7 @@ pub fn init_tracing() {
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| "axum_trainer=debug,tower_http=debug".into());
 
-    let console_layer = fmt::layer()
-        .with_target(true)
-        .with_level(true)
-        .pretty();
+    let console_layer = fmt::layer().with_target(true).with_level(true).pretty();
 
     tracing_subscriber::registry()
         .with(filter)
