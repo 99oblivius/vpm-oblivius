@@ -1,0 +1,10 @@
+# packages.oblivius.dev
+/index.json?authparam:
+/:
+  - enter gift or license key
+  - - vpm add or link to copy with authparam
+/admin:
+  - login page with passkey
+  - - generate gift key
+  - - manage gift keys
+  - - manage purchase license keys
