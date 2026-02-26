@@ -7,8 +7,4 @@ services:
       - "7246:3000"
     volumes:
       - ./data:/app/data
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      - ./.env:/app/.env:ro
