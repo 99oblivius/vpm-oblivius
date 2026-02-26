@@ -4,65 +4,82 @@
 
 {% block content %}
 <div class="col align-items-center content">
-  <div class="row align-items-center justify-content-between w-100 mt-5 mb-4">
-    <h1 class="m-0">Market Configuration</h1>
-    <div class="row" style="gap: 0.5rem;">
-      <fluent-button appearance="stealth" onclick="window.location.href='/panel'">Dashboard</fluent-button>
+  <div class="panel-nav">
+    <div class="nav-links">
+      <fluent-button appearance="stealth" onclick="window.location.href='/panel/packages'">Packages</fluent-button>
+      <fluent-button appearance="stealth" onclick="window.location.href='/panel/licenses'">Licenses</fluent-button>
+      <fluent-button appearance="accent" onclick="window.location.href='/panel/markets'">Markets</fluent-button>
+    </div>
+    <div class="nav-actions">
       <form method="post" action="/panel/logout" style="display:inline;">
         <fluent-button appearance="stealth" type="submit">Logout</fluent-button>
       </form>
     </div>
   </div>
 
-  {% for market in markets %}
-  <fluent-card class="p-4 w-100 mb-4">
-    <div class="row align-items-center justify-content-between mb-3">
-      <h3 class="m-0">{{ market.market }}</h3>
-      <div class="row align-items-center" style="gap: 0.75rem;">
-        <span class="caption2">
-          {% if market.updated_at.is_empty() %}
-          Never configured
-          {% else %}
-          Key last updated: {{ market.updated_at }}
-          {% endif %}
-        </span>
-        {% if market.active %}
-        <span class="badge" style="background: #2e7d32; color: #fff;">Active</span>
-        {% else %}
-        <span class="badge" style="background: #666; color: #fff;">Inactive</span>
-        {% endif %}
-      </div>
-    </div>
+  <h1 class="m-0 mb-4 w-100">Market Configuration</h1>
 
-    <form onsubmit="return false;" class="col" style="gap: 0.75rem;">
-      <div class="row align-items-center" style="gap: 0.5rem;">
-        <fluent-text-field name="base_url" placeholder="Base URL (e.g. https://payhip.com)" appearance="outline" style="flex:1;" value="{{ market.base_url }}"></fluent-text-field>
+  {% for market in markets %}
+  <fluent-card class="mb-4">
+    <div class="card-body">
+      <div class="row align-items-center justify-content-between mb-3">
+        <h3 class="m-0">{{ market.market }}</h3>
+        <div class="row align-items-center gap-md">
+          <span class="caption2">
+            {% if market.updated_at.is_empty() %}
+            Never configured
+            {% else %}
+            Key last updated: {{ market.updated_at }}
+            {% endif %}
+          </span>
+          {% if market.active %}
+          <span class="badge badge-success">Active</span>
+          {% else %}
+          <span class="badge badge-muted">Inactive</span>
+          {% endif %}
+        </div>
       </div>
-      <div class="row align-items-center" style="gap: 0.5rem;">
-        <fluent-text-field name="api_key" type="password" placeholder="New API key" appearance="outline" style="flex:1;"></fluent-text-field>
-      </div>
-      <div class="row align-items-center" style="gap: 0.5rem;">
-        <fluent-button appearance="accent" onclick="
-          const form = this.closest('form');
-          const body = {};
-          const url = form.querySelector('[name=base_url]').value;
-          const key = form.querySelector('[name=api_key]').value;
-          if(url) body.base_url = url;
-          if(key) body.api_key = key;
-          if(Object.keys(body).length === 0) return;
-          fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
-        ">Save</fluent-button>
-        {% if market.active %}
-        <fluent-button appearance="stealth" onclick="
-          fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:false})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
-        ">Disable</fluent-button>
-        {% else %}
-        <fluent-button appearance="stealth" onclick="
-          fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:true})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
-        ">Enable</fluent-button>
-        {% endif %}
-      </div>
-    </form>
+
+      <form onsubmit="return false;" class="col gap-md">
+        <fluent-text-field
+          id="market-url-{{ market.market }}"
+          name="base_url"
+          placeholder="Base URL (e.g. https://payhip.com)"
+          appearance="outline"
+          autocomplete="off"
+          value="{{ market.base_url }}"
+        ></fluent-text-field>
+        <fluent-text-field
+          id="market-key-{{ market.market }}"
+          name="api_key"
+          type="password"
+          placeholder="New API key"
+          appearance="outline"
+          autocomplete="off"
+        ></fluent-text-field>
+        <div class="row align-items-center gap-sm">
+          <fluent-button appearance="accent" onclick="
+            const form = this.closest('form');
+            const body = {};
+            const url = form.querySelector('[name=base_url]').value;
+            const key = form.querySelector('[name=api_key]').value;
+            if(url) body.base_url = url;
+            if(key) body.api_key = key;
+            if(Object.keys(body).length === 0) return;
+            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+          ">Save</fluent-button>
+          {% if market.active %}
+          <fluent-button appearance="stealth" onclick="
+            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:false})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+          ">Disable</fluent-button>
+          {% else %}
+          <fluent-button appearance="stealth" onclick="
+            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:true})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+          ">Enable</fluent-button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
   </fluent-card>
   {% endfor %}
 </div>

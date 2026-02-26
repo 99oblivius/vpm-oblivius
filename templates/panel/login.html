@@ -5,18 +5,22 @@
 {% block content %}
 <div class="landing-container">
   <div class="landing-title">Admin Login</div>
-  <form class="landing-form" method="post" action="/panel/login">
+  <form class="landing-form" method="post" action="/panel/login" autocomplete="on">
     <fluent-text-field
+      id="admin-username"
       name="username"
       placeholder="Username"
       appearance="outline"
+      autocomplete="username"
       autofocus
     ></fluent-text-field>
     <fluent-text-field
+      id="admin-password"
       name="password"
       placeholder="Password"
       type="password"
       appearance="outline"
+      autocomplete="current-password"
     ></fluent-text-field>
     <fluent-button appearance="accent" type="submit">Login</fluent-button>
     {% if let Some(error) = error %}

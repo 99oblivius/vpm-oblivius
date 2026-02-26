@@ -4,34 +4,45 @@
 
 {% block content %}
 <div class="col align-items-center content">
-  <div class="row align-items-center justify-content-between w-100 mt-5 mb-4">
-    <h1 class="m-0">Licenses &amp; Gifts</h1>
-    <div class="row" style="gap: 0.5rem;">
-      <fluent-button appearance="stealth" onclick="window.location.href='/panel'">Dashboard</fluent-button>
+  <div class="panel-nav">
+    <div class="nav-links">
+      <fluent-button appearance="stealth" onclick="window.location.href='/panel/packages'">Packages</fluent-button>
+      <fluent-button appearance="accent" onclick="window.location.href='/panel/licenses'">Licenses</fluent-button>
+      <fluent-button appearance="stealth" onclick="window.location.href='/panel/markets'">Markets</fluent-button>
+    </div>
+    <div class="nav-actions">
       <form method="post" action="/panel/logout" style="display:inline;">
         <fluent-button appearance="stealth" type="submit">Logout</fluent-button>
       </form>
     </div>
   </div>
 
-  <fluent-card class="p-4 w-100 mb-4">
-    <h3 class="m-0 mb-3">Generate Gift Code</h3>
-    <div class="row align-items-center" style="gap: 0.5rem;">
-      <fluent-text-field id="gift-package-id" placeholder="Package UID" appearance="outline" style="flex:1;"></fluent-text-field>
-      <fluent-button appearance="accent" id="gift-generate-btn" onclick="generateGift()">Generate</fluent-button>
-    </div>
-    <div id="gift-result" style="display:none; margin-top: 1rem; padding: 0.75rem; border-radius: 4px; background: var(--neutral-layer-2, #f0f0f0);">
-      <div class="col" style="gap: 0.25rem;">
-        <span><strong>Code:</strong> <code id="gift-result-code" style="font-family: monospace;"></code></span>
-        <span><strong>Token:</strong> <code id="gift-result-token" style="font-family: monospace;"></code></span>
-        <span class="caption2" id="gift-result-created"></span>
+  <h1 class="m-0 mb-4 w-100">Licenses &amp; Gifts</h1>
+
+  <fluent-card class="mb-4">
+    <div class="card-body">
+      <h3 class="m-0 mb-3">Generate Gift Code</h3>
+      <div class="row align-items-center gap-sm">
+        <fluent-combobox id="gift-package-select" placeholder="Select package..." autocomplete="list" style="flex:1;">
+          {% for pkg in packages %}
+          <fluent-option value="{{ pkg.uid }}">{{ pkg.name }} ({{ pkg.uid }})</fluent-option>
+          {% endfor %}
+        </fluent-combobox>
+        <fluent-button appearance="accent" id="gift-generate-btn" onclick="generateGift()">Generate</fluent-button>
       </div>
+      <div id="gift-result" class="result-block mt-3" style="display:none;">
+        <div class="col" style="gap: 0.25rem;">
+          <span><strong>Code:</strong> <code class="mono" id="gift-result-code"></code></span>
+          <span><strong>Token:</strong> <code class="mono" id="gift-result-token"></code></span>
+          <span class="caption2" id="gift-result-created"></span>
+        </div>
+      </div>
+      <div id="gift-error" class="alert-error mt-3" style="display:none;"></div>
     </div>
-    <div id="gift-error" style="display:none; margin-top: 1rem; padding: 0.75rem; border-radius: 4px; background: #fdd; color: #900;"></div>
   </fluent-card>
 
-  <fluent-card class="packages w-100">
-    <fluent-data-grid role="grid" grid-template-columns="1fr 140px 160px 80px 60px 120px 160px">
+  <fluent-card class="packages">
+    <fluent-data-grid role="grid" grid-template-columns="1fr 1fr 1fr 80px 60px 100px 150px">
       <fluent-data-grid-row row-type="header">
         <fluent-data-grid-cell cell-type="columnheader" grid-column="1">License</fluent-data-grid-cell>
         <fluent-data-grid-cell cell-type="columnheader" grid-column="2">Token</fluent-data-grid-cell>
@@ -44,26 +55,24 @@
       {% for lic in licenses %}
       <fluent-data-grid-row>
         <fluent-data-grid-cell grid-column="1">
-          <div class="col">
-            <span class="caption2" style="font-family: monospace;">{{ lic.license }}</span>
-          </div>
+          <span class="mono" title="{{ lic.license }}">{{ lic.license }}</span>
         </fluent-data-grid-cell>
-        <fluent-data-grid-cell grid-column="2" class="row align-items-center">
-          <span style="font-family: monospace; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ lic.token }}">{{ lic.token }}</span>
+        <fluent-data-grid-cell grid-column="2">
+          <span class="mono" title="{{ lic.token }}">{{ lic.token }}</span>
         </fluent-data-grid-cell>
         <fluent-data-grid-cell grid-column="3">
           <div class="col" style="gap: 0.15rem;">
             <span>{{ lic.package_name }}</span>
-            <span class="badge" style="font-size: 0.7em;">{{ lic.package_uid }}</span>
+            <span class="badge mono" style="font-size: 0.7em;">{{ lic.package_uid }}</span>
           </div>
         </fluent-data-grid-cell>
-        <fluent-data-grid-cell grid-column="4" class="row align-items-center">
+        <fluent-data-grid-cell grid-column="4">
           {{ lic.source }}
         </fluent-data-grid-cell>
-        <fluent-data-grid-cell grid-column="5" class="row align-items-center">
+        <fluent-data-grid-cell grid-column="5">
           {% if lic.active %}Yes{% else %}No{% endif %}
         </fluent-data-grid-cell>
-        <fluent-data-grid-cell grid-column="6" class="row align-items-center" style="gap: 0.25rem;">
+        <fluent-data-grid-cell grid-column="6" style="gap: 0.25rem;">
           {% if lic.active %}
           <fluent-button appearance="stealth" size="small"
             onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'DISABLE'})}).then(()=>location.reload())">
@@ -80,17 +89,17 @@
             Delete
           </fluent-button>
         </fluent-data-grid-cell>
-        <fluent-data-grid-cell grid-column="7" class="row align-items-center">
+        <fluent-data-grid-cell grid-column="7">
           <span class="caption2">{{ lic.created_at }}</span>
         </fluent-data-grid-cell>
       </fluent-data-grid-row>
       {% endfor %}
     </fluent-data-grid>
 
-    <div class="row align-items-center justify-content-between w-100 p-3" style="gap: 1rem;">
+    <div class="row align-items-center justify-content-between w-100 p-3">
       <span class="caption2">Showing {{ licenses.len() }} licenses</span>
-      <div class="row" style="gap: 0.5rem;">
-        {% if cursor > 0 %}
+      <div class="row gap-sm">
+        {% if show_first_page %}
         <fluent-button appearance="stealth" size="small" onclick="window.location.href='/panel/licenses'">First page</fluent-button>
         {% endif %}
         {% if let Some(nc) = next_cursor %}
@@ -103,9 +112,9 @@
 
 <script>
 function generateGift() {
-  var field = document.getElementById('gift-package-id');
-  var value = field.value.trim();
-  if (!value) { field.focus(); return; }
+  var combo = document.getElementById('gift-package-select');
+  var value = combo.value;
+  if (!value) { combo.focus(); return; }
   var btn = document.getElementById('gift-generate-btn');
   var resultDiv = document.getElementById('gift-result');
   var errorDiv = document.getElementById('gift-error');

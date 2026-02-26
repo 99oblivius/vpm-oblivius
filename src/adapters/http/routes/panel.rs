@@ -27,7 +27,7 @@ use crate::{
 
 pub fn router(state: AppState) -> Router<AppState> {
     let protected = Router::new()
-        .route("/", routing::get(panel_dashboard))
+        .route("/", routing::get(|| async { Redirect::to("/panel/packages") }))
         .route("/packages", routing::get(panel_packages))
         .route("/packages/{uid}", routing::get(panel_package_detail))
         .route("/licenses", routing::get(panel_licenses))
@@ -158,7 +158,7 @@ async fn panel_login(
     );
 
     let mut headers = header::HeaderMap::new();
-    headers.insert(header::LOCATION, "/panel".parse().unwrap());
+    headers.insert(header::LOCATION, "/panel/packages".parse().unwrap());
     headers.append(header::SET_COOKIE, access_cookie.parse().unwrap());
     headers.append(header::SET_COOKIE, refresh_cookie.parse().unwrap());
 
@@ -234,14 +234,6 @@ async fn panel_refresh(
 }
 
 #[derive(Template, WebTemplate)]
-#[template(path = "panel/dashboard.html")]
-struct DashboardTemplate {}
-
-async fn panel_dashboard() -> DashboardTemplate {
-    DashboardTemplate {}
-}
-
-#[derive(Template, WebTemplate)]
 #[template(path = "panel/packages.html")]
 struct PackagesTemplate {
     packages: Vec<crate::domain::Package>,
@@ -259,17 +251,20 @@ async fn panel_packages(
 struct PackageDetailTemplate {
     package: crate::domain::Package,
     versions: Vec<crate::domain::PackageVersion>,
+    markets: Vec<String>,
 }
 
 async fn panel_package_detail(
     State(package_use_cases): State<Arc<crate::use_cases::packages::PackageUseCases>>,
+    State(store): State<Arc<crate::domain::MarketCredentialStore>>,
     Path(uid): Path<String>,
 ) -> Response {
     let Ok(Some(package)) = package_use_cases.get_by_uid(&uid).await else {
         return Redirect::to("/panel/packages").into_response();
     };
     let versions = package_use_cases.get_versions(&uid).await.unwrap_or_default();
-    PackageDetailTemplate { package, versions }.into_response()
+    let markets: Vec<String> = store.list().into_iter().map(|c| c.market).collect();
+    PackageDetailTemplate { package, versions, markets }.into_response()
 }
 
 #[derive(Debug, Deserialize)]
@@ -283,17 +278,24 @@ struct LicensesQuery {
 fn default_cursor() -> i64 { i64::MAX }
 fn default_page_size() -> i64 { 50 }
 
+struct PackageOption {
+    uid: String,
+    name: String,
+}
+
 #[derive(Template, WebTemplate)]
 #[template(path = "panel/licenses.html")]
 struct LicensesTemplate {
     licenses: Vec<crate::domain::License>,
-    cursor: i64,
+    packages: Vec<PackageOption>,
     page_size: i64,
+    show_first_page: bool,
     next_cursor: Option<i64>,
 }
 
 async fn panel_licenses(
     State(license_use_cases): State<Arc<crate::use_cases::license::LicenseUseCases>>,
+    State(package_use_cases): State<Arc<crate::use_cases::packages::PackageUseCases>>,
     Query(query): Query<LicensesQuery>,
 ) -> impl IntoResponse {
     let page_size = query.page_size.clamp(1, 1000);
@@ -306,10 +308,19 @@ async fn panel_licenses(
     } else {
         None
     };
+    let packages = package_use_cases
+        .list()
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|p| PackageOption { uid: p.uid, name: p.name })
+        .collect();
+    let show_first_page = query.cursor != i64::MAX;
     LicensesTemplate {
         licenses,
-        cursor: query.cursor,
+        packages,
         page_size: query.page_size,
+        show_first_page,
         next_cursor,
     }
 }
