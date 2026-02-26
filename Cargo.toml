@@ -18,7 +18,7 @@ dotenvy = "0.15"
 futures = "0.3.31"
 governor = "0.8"
 http = "1.4.0"
-jsonwebtoken = "10.3.0"
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 parking_lot = "0.12"
 parse_duration = "2.1.1"
 rand = "0.9.2"
