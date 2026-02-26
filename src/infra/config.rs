@@ -1,6 +1,6 @@
 use std::{env, time::Duration};
 
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use parse_duration;
 
 pub struct AppConfig {
@@ -36,12 +36,15 @@ impl AppConfig {
         let packages_dir = env::var("PACKAGES_DIR").unwrap_or("./data/packages".into());
 
         let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+        if jwt_secret.len() < 32 {
+            panic!("JWT_SECRET must be at least 32 bytes long");
+        }
 
-        let access_token_ttl = env::var("ACCESS_TOKEN_TTL").unwrap_or("1d".into());
+        let access_token_ttl = env::var("ACCESS_TOKEN_TTL").unwrap_or("30m".into());
         let access_token_ttl: Duration = parse_duration::parse(&access_token_ttl)
             .expect("ACCESS_TOKEN_TTL could not be turned into a Duration");
 
-        let refresh_token_ttl = env::var("REFRESH_TOKEN_TTL").unwrap_or("1h".into());
+        let refresh_token_ttl = env::var("REFRESH_TOKEN_TTL").unwrap_or("1d".into());
         let refresh_token_ttl: Duration = parse_duration::parse(&refresh_token_ttl)
             .expect("REFRESH_TOKEN_TTL could not be turned into a Duration");
 

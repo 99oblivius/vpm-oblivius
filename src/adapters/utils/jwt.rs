@@ -1,3 +1,7 @@
+// Post-quantum note: HMAC-SHA256 is a symmetric algorithm and is NOT vulnerable to
+// quantum attacks. Grover's algorithm only halves effective security (256→128 bit),
+// which remains computationally infeasible. No migration to post-quantum algorithms needed.
+
 use std::time::Duration;
 
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
@@ -49,7 +53,12 @@ pub fn validate_token(secret: &str, token: &str) -> AppResult<Claims> {
     let token_data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
-        &Validation::default(),
+        &{
+            let mut v = Validation::default();
+            v.set_required_spec_claims(&["exp", "sub"]);
+            v.leeway = 30;
+            v
+        },
     )
     .map_err(|_| AppError::InvalidCredentials)?;
 

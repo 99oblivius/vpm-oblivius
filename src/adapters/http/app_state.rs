@@ -14,11 +14,15 @@ pub struct AuthState(Arc<AtomicU64>);
 
 impl AuthState {
     pub fn new() -> Self {
-        Self(Arc::new(AtomicU64::new(0)))
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        Self(Arc::new(AtomicU64::new(now)))
     }
 
     pub fn issued_after(&self) -> u64 {
-        self.0.load(Ordering::Relaxed)
+        self.0.load(Ordering::Acquire)
     }
 
     pub fn revoke_all(&self) {
@@ -26,7 +30,7 @@ impl AuthState {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        self.0.store(now, Ordering::Relaxed);
+        self.0.store(now, Ordering::Release);
     }
 }
 

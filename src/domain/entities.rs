@@ -20,6 +20,7 @@ pub struct PackageVersion {
 pub struct MarketCredentials {
     pub market: String,
     pub base_url: String,
+    #[serde(skip_serializing)]
     pub api_key: String,
     pub active: bool,
     pub updated_at: String,

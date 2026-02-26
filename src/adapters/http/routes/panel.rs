@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::{
@@ -13,6 +14,8 @@ use axum::{
 use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 use sha2::{Sha256, Digest};
+use subtle::ConstantTimeEq;
+use crate::adapters::http::rate_limit;
 
 use crate::{
     adapters::{
@@ -32,7 +35,11 @@ pub fn router(state: AppState) -> Router<AppState> {
         .layer(middleware::from_fn_with_state(state, panel_auth));
 
     Router::new()
-        .route("/login", routing::get(panel_login_page).post(panel_login))
+        .route("/login", routing::get(panel_login_page))
+        .route(
+            "/login",
+            routing::post(panel_login).layer(rate_limit::per_ip(2, 5)),
+        )
         .route("/logout", routing::post(panel_logout))
         .route("/refresh", routing::post(panel_refresh))
         .merge(protected)
@@ -73,26 +80,33 @@ struct LoginPayload {
 }
 
 fn verify_password(password: &str, expected_hash: &str) -> bool {
-    let mut hasher = Sha256::new();
-    hasher.update(password.as_bytes());
-    let computed = format!("{:x}", hasher.finalize());
-
-    // Constant-time comparison
-    if computed.len() != expected_hash.len() {
+    let Ok(parsed_hash) = PasswordHash::new(expected_hash) else {
         return false;
-    }
-    computed
-        .bytes()
-        .zip(expected_hash.bytes())
-        .fold(0u8, |acc, (a, b)| acc | (a ^ b))
-        == 0
+    };
+    Argon2::default()
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_ok()
+}
+
+/// Constant-time username comparison using SHA-256 normalization + subtle::ct_eq.
+fn verify_username(input: &str, expected: &str) -> bool {
+    let hash_input = Sha256::digest(input.as_bytes());
+    let hash_expected = Sha256::digest(expected.as_bytes());
+    hash_input.ct_eq(&hash_expected).into()
 }
 
 async fn panel_login(
     State(config): State<Arc<AppConfig>>,
     Form(payload): Form<LoginPayload>,
 ) -> impl IntoResponse {
-    let user_ok = payload.username == config.admin_user;
+    if payload.username.len() > 256 || payload.password.len() > 1024 {
+        return LoginTemplate {
+            error: Some("Invalid credentials".to_string()),
+        }
+        .into_response();
+    }
+
+    let user_ok = verify_username(&payload.username, &config.admin_user);
     let pass_ok = verify_password(&payload.password, &config.admin_pass_hash);
 
     if !user_ok || !pass_ok {
@@ -196,13 +210,35 @@ async fn panel_refresh(
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
 
+    let refresh_token = match jwt::create_token(
+        &config.jwt_secret,
+        config.refresh_token_ttl,
+        &claims.sub,
+        TokenType::Refresh,
+    ) {
+        Ok(t) => t,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+
     let access_cookie = format!(
         "admin_token={}; HttpOnly; Secure; SameSite=Strict; Max-Age={}; Path=/",
         access_token,
         config.access_token_ttl.as_secs()
     );
+    let refresh_cookie = format!(
+        "admin_refresh={}; HttpOnly; Secure; SameSite=Strict; Max-Age={}; Path=/panel/refresh",
+        refresh_token,
+        config.refresh_token_ttl.as_secs()
+    );
 
-    (StatusCode::OK, [(header::SET_COOKIE, access_cookie)]).into_response()
+    (
+        StatusCode::OK,
+        [
+            (header::SET_COOKIE, access_cookie),
+            (header::SET_COOKIE, refresh_cookie),
+        ],
+    )
+        .into_response()
 }
 
 #[derive(Template, WebTemplate)]
@@ -246,12 +282,13 @@ async fn panel_package_detail(
 
 #[derive(Debug, Deserialize)]
 struct LicensesQuery {
-    #[serde(default)]
+    #[serde(default = "default_cursor")]
     cursor: i64,
     #[serde(default = "default_page_size")]
     page_size: i64,
 }
 
+fn default_cursor() -> i64 { i64::MAX }
 fn default_page_size() -> i64 { 50 }
 
 #[derive(Template, WebTemplate)]
@@ -267,8 +304,9 @@ async fn panel_licenses(
     State(license_use_cases): State<Arc<crate::use_cases::license::LicenseUseCases>>,
     Query(query): Query<LicensesQuery>,
 ) -> impl IntoResponse {
+    let page_size = query.page_size.clamp(1, 1000);
     let licenses = license_use_cases
-        .list(&query.cursor, &query.page_size)
+        .list(&query.cursor, &page_size)
         .await
         .unwrap_or_default();
     let next_cursor = if licenses.len() as i64 == query.page_size {
