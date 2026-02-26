@@ -1,10 +1,11 @@
-use crate::{adapters::http::app_state::AppState, infra::setup::init_tracing};
 use axum::{
     http::{self, header, Method},
     Router,
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use uuid::Uuid;
+
+use crate::{adapters::http::app_state::AppState, infra::setup::init_tracing};
 
 pub fn create_app(app_state: AppState) -> Router {
     init_tracing();
@@ -23,7 +24,7 @@ pub fn create_app(app_state: AppState) -> Router {
         .allow_credentials(false);
 
     Router::new()
-        .merge(crate::adapters::http::routes::router(app_state))
+        .merge(crate::adapters::http::routes::router(app_state.clone()))
         .with_state(app_state)
         .layer(cors)
         .layer(

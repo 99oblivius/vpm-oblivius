@@ -1,15 +1,8 @@
 use rand::Rng;
-use sha2::{Digest, Sha256};
 
-const ALPHABET: &[u8] = b"23456789ABCDEFGHJKMNOPQRSTVWXYZ";
+const ALPHABET: &[u8] = b"23456789ABCDEFGHJKMNPQRSTVWXYZ";
 const GROUP_SIZE: usize = 5;
 const GROUP_COUNT: usize = 4;
-
-fn hash_key(key: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(key.as_bytes());
-    format!("{:x}", hasher.finalize())
-}
 
 fn calculate_checksum(bytes: &[u8]) -> usize {
     bytes.iter().enumerate().fold(0, |acc, (i, &byte)| {
@@ -19,8 +12,8 @@ fn calculate_checksum(bytes: &[u8]) -> usize {
     })
 }
 
-pub fn verify_key(key: &str) -> bool {
-    let clean = key
+pub fn check_gift(key: &str) -> bool {
+    let clean: String = key
         .chars()
         .filter(|c| *c != '-')
         .flat_map(|c| c.to_uppercase())
@@ -45,17 +38,16 @@ pub fn verify_key(key: &str) -> bool {
 #[derive(Clone)]
 pub struct GiftCode {
     pub key: String,
-    pub hash: String,
 }
 
 impl GiftCode {
-    fn generate() -> Self {
+    pub fn generate() -> Self {
         let mut rng = rand::rng();
         let n = ALPHABET.len();
 
         let total_chars = GROUP_SIZE * GROUP_COUNT;
         let mut chars: Vec<u8> = (0..total_chars - 1)
-            .map(|_| ALPHABET[rng.gen_range(0..n)])
+            .map(|_| ALPHABET[rng.random_range(0..n)])
             .collect();
 
         let checksum = calculate_checksum(&chars);
@@ -67,8 +59,6 @@ impl GiftCode {
             .collect::<Vec<_>>()
             .join("-");
 
-        let hash = hash_key(key);
-
-        Self { key, hash }
+        Self { key }
     }
 }

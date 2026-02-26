@@ -1,2 +1,3 @@
-pub mod redeem;
-pub mod code;
+pub mod gift;
+pub mod license;
+pub mod packages;

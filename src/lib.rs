@@ -1,7 +1,6 @@
 mod adapters;
 mod application;
-mod domain;
-mod infra;
+pub mod domain;
+pub mod infra;
 
 pub use application::*;
-pub use domain::*;

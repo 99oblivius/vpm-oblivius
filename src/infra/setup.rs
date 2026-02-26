@@ -1,37 +1,50 @@
+use std::sync::Arc;
+
+use tracing_subscriber::{filter::EnvFilter, fmt, prelude::*};
+
 use crate::{
     adapters::{
-        http::app_state::AppState,
-        markets::{Markets, Payhip},
+        http::app_state::{AppState, AuthState},
+        markets::Payhip,
     },
+    domain::MarketCredentialStore,
     infra::{config::AppConfig, sqlite_database},
-    use_cases::{code::CodeUseCases, redeem::RedeemUseCases},
+    use_cases::{
+        gift::GiftUseCases,
+        license::{LicenseUseCases, Markets},
+        packages::PackageUseCases,
+    },
 };
-use tracing_subscriber::{filter::EnvFilter, fmt};
-
-use std::sync::Arc;
 
 pub async fn init_state() -> anyhow::Result<AppState> {
     let config = AppConfig::from_env();
 
-    let sqlite_arc = Arc::new(sqlite_database().await?);
+    let sqlite_arc = Arc::new(sqlite_database(&config.database_url).await?);
 
-    let mut markets = Markets::new();
-    if let (Some(url), Some(key)) = (config.payhip_api_url.clone(), config.payhip_api_key.clone()) {
-        markets = markets.add(Box::new(Payhip::new(url, key)));
-    }
+    let credential_store = Arc::new(
+        MarketCredentialStore::load(sqlite_arc.clone()).await?,
+    );
 
-    let code_use_cases = CodeUseCases::new(sqlite_arc.clone());
-    let redeem_use_cases = RedeemUseCases::new(Arc::new(markets), sqlite_arc.clone());
+    let markets = Markets::new()
+        .add(Box::new(Payhip::new(credential_store.clone())));
+
+    let gift_use_cases = GiftUseCases::new(sqlite_arc.clone());
+    let license_use_cases = LicenseUseCases::new(sqlite_arc.clone(), Arc::new(markets));
+    let package_use_cases = PackageUseCases::new(sqlite_arc.clone());
 
     Ok(AppState {
         config: Arc::new(config),
-        code_use_cases: Arc::new(code_use_cases),
+        auth: AuthState::new(),
+        credential_store,
+        gift_use_cases: Arc::new(gift_use_cases),
+        license_use_cases: Arc::new(license_use_cases),
+        package_use_cases: Arc::new(package_use_cases),
     })
 }
 
 pub fn init_tracing() {
     let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| "axum_trainer=debug,tower_http=debug".into());
+        .unwrap_or_else(|_| "vpm_oblivius,tower_http=debug".into());
 
     let console_layer = fmt::layer().with_target(true).with_level(true).pretty();
 
