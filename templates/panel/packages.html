@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Packages - Admin - Oblivius{% endblock %}
+
+{% block content %}
+<div class="col align-items-center content">
+  <div class="row align-items-center justify-content-between w-100 mt-5 mb-4">
+    <h1 class="m-0">Packages</h1>
+    <div class="row" style="gap: 0.5rem;">
+      <fluent-button appearance="stealth" onclick="window.location.href='/panel'">Dashboard</fluent-button>
+      <form method="post" action="/panel/logout" style="display:inline;">
+        <fluent-button appearance="stealth" type="submit">Logout</fluent-button>
+      </form>
+    </div>
+  </div>
+
+  <fluent-card class="p-4 w-100 mb-4">
+    <h3 class="m-0 mb-3">Create Package</h3>
+    <form onsubmit="return false;" class="row align-items-center" style="gap: 0.5rem;">
+      <fluent-text-field name="name" placeholder="Package name" appearance="outline" style="flex:1;"></fluent-text-field>
+      <fluent-button appearance="accent" onclick="
+        const name = this.closest('form').querySelector('[name=name]').value;
+        if(!name) return;
+        fetch('/api/packages', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+      ">Create</fluent-button>
+    </form>
+  </fluent-card>
+
+  <fluent-card class="packages w-100">
+    <fluent-data-grid role="grid" grid-template-columns="1fr 120px 200px 80px">
+      <fluent-data-grid-row row-type="header">
+        <fluent-data-grid-cell cell-type="columnheader" grid-column="1">Name</fluent-data-grid-cell>
+        <fluent-data-grid-cell cell-type="columnheader" grid-column="2">UID</fluent-data-grid-cell>
+        <fluent-data-grid-cell cell-type="columnheader" grid-column="3">Created</fluent-data-grid-cell>
+        <fluent-data-grid-cell cell-type="columnheader" grid-column="4">Actions</fluent-data-grid-cell>
+      </fluent-data-grid-row>
+      {% for pkg in packages %}
+      <fluent-data-grid-row>
+        <fluent-data-grid-cell grid-column="1">
+          <a href="/panel/packages/{{ pkg.uid }}" class="packageName" style="text-decoration:none;color:inherit;">{{ pkg.name }}</a>
+        </fluent-data-grid-cell>
+        <fluent-data-grid-cell grid-column="2" class="row align-items-center">
+          <span class="badge">{{ pkg.uid }}</span>
+        </fluent-data-grid-cell>
+        <fluent-data-grid-cell grid-column="3" class="row align-items-center">
+          <span class="caption2">{{ pkg.created_at }}</span>
+        </fluent-data-grid-cell>
+        <fluent-data-grid-cell grid-column="4" class="row align-items-center">
+          <fluent-button appearance="stealth" size="small" onclick="
+            if(confirm('Delete this package?'))
+              fetch('/api/packages/{{ pkg.uid }}', {method:'DELETE'}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+          ">Delete</fluent-button>
+        </fluent-data-grid-cell>
+      </fluent-data-grid-row>
+      {% endfor %}
+    </fluent-data-grid>
+  </fluent-card>
+</div>
+{% endblock %}

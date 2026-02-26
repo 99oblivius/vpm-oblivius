@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}oblivius Packages{% endblock %}
+
+{% block content %}
+<div class="landing-container">
+  <div class="landing-title">oblivius Packages</div>
+  <form class="landing-form" method="post" action="/redeem">
+    <fluent-text-field
+      name="code"
+      placeholder="Enter your license or gift code"
+      appearance="outline"
+      autofocus
+    ></fluent-text-field>
+    <fluent-button appearance="accent" type="submit">Redeem</fluent-button>
+    {% if let Some(error) = error %}
+      <div class="error-message">{{ error }}</div>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

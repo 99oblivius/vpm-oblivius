@@ -1,24 +1,30 @@
+use std::sync::Arc;
 use axum::{
-    http::{get, patch},
+    extract::{State, Query},
+    http::StatusCode,
+    response::IntoResponse,
+    routing,
+    Json,
     Router,
 };
+use serde::Deserialize;
+use tracing::info;
 
-use crate::adapters::http::app_state::AppState;
+use crate::{
+    adapters::http::app_state::AppState,
+    use_cases::license::LicenseUseCases,
+    app_error::AppResult,
+};
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/license", routing::get(license_list).patch(license_update))
+        .route("/license", routing::get(license_list).patch(license_update).delete(license_delete))
 }
 
 #[derive(Debug, Clone, Deserialize)]
 struct ListPayload {
     cursor: i64,
     page_size: i64,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ListResponse {
-    licenses: LicenseRow,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -40,19 +46,20 @@ struct DeletePayload {
 
 async fn license_list(
     State(license_use_cases): State<Arc<LicenseUseCases>>,
-    Query(payload): Quer<ListPayload>,
+    Query(payload): Query<ListPayload>,
 ) -> AppResult<impl IntoResponse> {
+    info!("License list called: {} {}", &payload.cursor, &payload.page_size);
     let licenses = license_use_cases
-        .list(payload.cursor, payload.page_size)
+        .list(&payload.cursor, &payload.page_size)
         .await?;
-    Ok((StatusCode::OK, Json(json!(licenses))))
+    Ok((StatusCode::OK, Json(licenses)))
 }
 
 async fn license_update(
     State(license_use_cases): State<Arc<LicenseUseCases>>,
     Json(payload): Json<UpdatePayload>,
 ) -> AppResult<impl IntoResponse> {
-    info!("License update called");
+    info!("License update called: {}", payload.code);
     match payload.update {
         UpdateAction::ENABLE => license_use_cases.enable(&payload.code).await?,
         UpdateAction::DISABLE => license_use_cases.disable(&payload.code).await?,
@@ -64,7 +71,7 @@ async fn license_delete(
     State(license_use_cases): State<Arc<LicenseUseCases>>,
     Json(payload): Json<DeletePayload>,
 ) -> AppResult<impl IntoResponse> {
-    info!("License deletion called");
+    info!("License deletion called: {}", payload.code);
     license_use_cases.delete(&payload.code).await?;
     Ok(StatusCode::OK)
 }
