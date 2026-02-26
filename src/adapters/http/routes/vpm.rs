@@ -1,10 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
 use axum::{Router, extract::{Query, State}, http::StatusCode, response::IntoResponse, routing, Json};
+use ::http::HeaderMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    adapters::http::app_state::AppState,
+    adapters::http::{self, app_state::AppState},
     infra::config::AppConfig,
     use_cases::packages::PackageUseCases,
 };
@@ -44,6 +45,7 @@ struct IndexQuery {
 
 async fn vpm_index(
     Query(query): Query<IndexQuery>,
+    headers: HeaderMap,
     State(config): State<Arc<AppConfig>>,
     State(package_use_cases): State<Arc<PackageUseCases>>,
 ) -> impl IntoResponse {
@@ -58,13 +60,14 @@ async fn vpm_index(
         .await
         .unwrap_or_default();
 
-    let listing_url = format!("{}/index.json?token={}", config.base_url, query.token);
+    let base_url = http::base_url_from_headers(&headers, &config.cors_origins);
+    let listing_url = format!("{base_url}/index.json?token={}", query.token);
 
     let mut version_map = HashMap::new();
     for v in &versions {
         let download_url = format!(
-            "{}/packages/{}/{}?token={}",
-            config.base_url, package.uid, v.file_name, query.token
+            "{base_url}/packages/{}/{}?token={}",
+            package.uid, v.file_name, query.token
         );
         version_map.insert(
             v.version.clone(),

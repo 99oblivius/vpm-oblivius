@@ -4,12 +4,13 @@ use askama::Template;
 use askama_web::WebTemplate;
 use axum::{Form, Router, extract::State, response::{IntoResponse, Redirect}, routing};
 use axum_extra::extract::CookieJar;
-use http::{HeaderMap, StatusCode, header};
+use ::http::{HeaderMap, StatusCode, header};
 use serde::Deserialize;
 
 use crate::{
-    adapters::http::{app_state::AppState, bounded::Bounded},
+    adapters::http::{self, app_state::AppState, bounded::Bounded},
     app_error::AppResult,
+    infra::config::AppConfig,
     use_cases::{license::LicenseUseCases, packages::PackageUseCases},
 };
 
@@ -68,6 +69,7 @@ struct ResultTemplate {
 async fn result_page(
     jar: CookieJar,
     headers: HeaderMap,
+    State(config): State<Arc<AppConfig>>,
     State(package_use_cases): State<Arc<PackageUseCases>>,
 ) -> impl IntoResponse {
     let Some(cookie) = jar.get("redeem_result") else {
@@ -75,16 +77,8 @@ async fn result_page(
     };
     let token = cookie.value();
 
-    let host = headers
-        .get(header::HOST)
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("localhost");
-    let scheme = if host.starts_with("localhost") || host.starts_with("127.0.0.1") {
-        "http"
-    } else {
-        "https"
-    };
-    let listing_url = format!("{scheme}://{host}/index.json?token={token}");
+    let base_url = http::base_url_from_headers(&headers, &config.cors_origins);
+    let listing_url = format!("{base_url}/index.json?token={token}");
 
     let package = match package_use_cases.get_package_for_token(token).await {
         Ok(Some(pkg)) => pkg,

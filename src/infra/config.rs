@@ -5,7 +5,6 @@ use parse_duration;
 
 pub struct AppConfig {
     pub serve_addr: String,
-    pub base_url: String,
 
     pub database_url: String,
     pub packages_dir: String,
@@ -30,7 +29,6 @@ impl AppConfig {
             .parse()
             .expect("PORT must be a number between 0 and 65536");
         let serve_addr = format!("{host}:{port}");
-        let base_url = env::var("BASE_URL").unwrap_or(format!("http://{serve_addr}"));
 
         let database_url = env::var("DATABASE_URL").unwrap_or("./data/keys.db".into());
         let packages_dir = env::var("PACKAGES_DIR").unwrap_or("./data/packages".into());
@@ -60,7 +58,6 @@ impl AppConfig {
 
         Self {
             serve_addr,
-            base_url,
 
             database_url,
             packages_dir,
