@@ -1,31 +1,64 @@
-use super::Market;
-use crate::app_error::AppResult;
+use std::sync::Arc;
+
+use async_trait::async_trait;
+
+use crate::app_error::{AppError, AppResult};
+use crate::domain::{MarketCredentialStore, MarketPort};
 
 pub struct Payhip {
-    url: String,
-    api_key: String,
+    credentials: Arc<MarketCredentialStore>,
 }
 
 impl Payhip {
-    pub fn new(url: String, api_key: String) -> Self {
-        Self { url, api_key }
+    pub fn new(credentials: Arc<MarketCredentialStore>) -> Self {
+        Self { credentials }
     }
 }
 
-impl Market for Payhip {
-    fn verify_key(&self, key: &str) -> AppResult<bool> {
-        Ok(true)
+#[async_trait]
+impl MarketPort for Payhip {
+    fn name(&self) -> &'static str {
+        "payhip"
     }
 
-    fn disable_key(&self, key: &str) -> AppResult<()> {
-        Ok(())
+    fn check_format(&self, key: &str) -> bool {
+        let parts: Vec<&str> = key.split('-').collect();
+        parts.len() == 4
+            && parts
+                .iter()
+                .all(|p| p.len() == 5 && p.chars().all(|c| c.is_ascii_alphanumeric()))
     }
 
-    fn enable_key(&self, key: &str) -> AppResult<()> {
-        Ok(())
-    }
+    async fn verify_key(&self, key: &str) -> AppResult<Option<String>> {
+        let creds = self
+            .credentials
+            .get(self.name())
+            .ok_or_else(|| AppError::MarketError("Payhip not configured".into()))?;
 
-    fn is_online(&self) -> AppResult<bool> {
-        Ok(true)
+        if !creds.active {
+            return Ok(None);
+        }
+
+        let resp = reqwest::Client::new()
+            .get(format!("{}/api/v2/license/verify", creds.base_url))
+            .query(&[("license_key", key)])
+            .header("product-secret-key", &creds.api_key)
+            .send()
+            .await
+            .map_err(|e| AppError::MarketError(e.to_string()))?;
+
+        if !resp.status().is_success() {
+            return Ok(None);
+        }
+
+        let body: serde_json::Value = resp
+            .json()
+            .await
+            .map_err(|e| AppError::MarketError(e.to_string()))?;
+
+        match body["enabled"].as_bool() {
+            Some(true) => Ok(body["product_link"].as_str().map(String::from)),
+            _ => Ok(None),
+        }
     }
 }

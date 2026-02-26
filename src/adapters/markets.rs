@@ -1,26 +1,25 @@
-use crate::app_error::AppResult;
+use thiserror::Error;
 
-mod payhip;
+pub mod payhip;
 pub use payhip::Payhip;
 
-pub trait Market {
-    fn verify_key(&self, key: &str) -> AppResult<bool>;
-    fn disable_key(&self, key: &str) -> AppResult<()>;
-    fn enable_key(&self, key: &str) -> AppResult<()>;
-    fn is_online(&self) -> AppResult<bool>;
+#[derive(Error, Debug)]
+pub enum MarketErrorKind {
+    #[error("Http error: {0}")]
+    Http(#[from] reqwest::Error),
+
+    #[error("Request failed with status {status}: {message}")]
+    BadStatus { status: u16, message: String },
+
+    #[error("{0}")]
+    Other(String),
 }
 
-pub struct Markets {
-    markets: Vec<Box<dyn Market + Send + Sync>>,
-}
-
-impl Markets {
-    pub fn new() -> Self {
-        Self { markets: vec![] }
-    }
-
-    pub fn add(mut self, market: Box<dyn Market + Send + Sync>) -> Self {
-        self.markets.push(market);
-        self
+impl MarketErrorKind {
+    pub fn bad_status(response: &reqwest::Response, body: String) -> Self {
+        Self::BadStatus {
+            status: response.status().as_u16(),
+            message: body,
+        }
     }
 }
