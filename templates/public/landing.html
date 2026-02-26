@@ -6,13 +6,14 @@
 <div class="landing-container">
   <div class="landing-title">oblivius Packages</div>
   <form class="landing-form" method="post" action="/redeem">
-    <fluent-text-field
+    <input
+      type="text"
+      class="text-field"
       name="code"
       placeholder="Enter your license or gift code"
-      appearance="outline"
       autofocus
-    ></fluent-text-field>
-    <fluent-button appearance="accent" type="submit">Redeem</fluent-button>
+    >
+    <button type="submit" class="btn btn-accent">Redeem</button>
     {% if let Some(error) = error %}
       <div class="error-message">{{ error }}</div>
     {% endif %}

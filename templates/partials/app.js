@@ -9,11 +9,11 @@ function filterPackages() {
   const input = document.getElementById('searchInput');
   if (!input) return;
   const filter = input.value.toLowerCase();
-  const rows = document.querySelectorAll('#packageGrid fluent-data-grid-row:not([row-type="header"])');
+  const rows = document.querySelectorAll('.data-grid tbody tr');
   rows.forEach(row => {
     const name = (row.dataset.packageName || '').toLowerCase();
     const id = (row.dataset.packageId || '').toLowerCase();
-    row.classList.toggle('hidden', !name.includes(filter) && !id.includes(filter));
+    row.style.display = (!name.includes(filter) && !id.includes(filter)) ? 'none' : '';
   });
 }
 
@@ -39,9 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const helpDialog = document.getElementById('addListingToVccHelp');
   const helpClose = document.getElementById('addListingToVccHelpClose');
   if (helpBtn && helpDialog) {
-    helpBtn.addEventListener('click', () => helpDialog.hidden = false);
+    helpBtn.addEventListener('click', () => helpDialog.showModal());
   }
   if (helpClose && helpDialog) {
-    helpClose.addEventListener('click', () => helpDialog.hidden = true);
+    helpClose.addEventListener('click', () => helpDialog.close());
   }
 });

@@ -8,10 +8,6 @@
 </head>
 <body>
   {% block content %}{% endblock %}
-  <script type="module">
-    import { provideFluentDesignSystem, allComponents } from 'https://unpkg.com/@fluentui/web-components@2.6.1';
-    provideFluentDesignSystem().register(allComponents);
-  </script>
   <script>{% include "partials/app.js" %}</script>
 </body>
 </html>

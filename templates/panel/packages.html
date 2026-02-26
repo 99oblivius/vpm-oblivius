@@ -6,13 +6,13 @@
 <div class="panel-page">
   <div class="panel-header">
     <div class="nav-links">
-      <fluent-button appearance="accent" onclick="window.location.href='/panel/packages'">Packages</fluent-button>
-      <fluent-button appearance="stealth" onclick="window.location.href='/panel/licenses'">Licenses</fluent-button>
-      <fluent-button appearance="stealth" onclick="window.location.href='/panel/markets'">Markets</fluent-button>
+      <button class="btn btn-accent" onclick="window.location.href='/panel/packages'">Packages</button>
+      <button class="btn btn-stealth" onclick="window.location.href='/panel/licenses'">Licenses</button>
+      <button class="btn btn-stealth" onclick="window.location.href='/panel/markets'">Markets</button>
     </div>
     <div class="nav-actions">
       <form method="post" action="/panel/logout" style="display:inline;">
-        <fluent-button appearance="stealth" type="submit">Logout</fluent-button>
+        <button class="btn btn-stealth" type="submit">Logout</button>
       </form>
     </div>
   </div>
@@ -20,54 +20,61 @@
     <div class="col align-items-center content">
       <h1 class="m-0 mb-4">Packages</h1>
 
-      <fluent-card class="p-4 mb-4" style="max-width:90%;">
+      <div class="card p-4 mb-4" style="max-width:90%;">
         <h3 class="m-0 mb-3">Create Package</h3>
         <form onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
-          <fluent-text-field
+          <input
+            type="text"
+            class="text-field"
             id="create-package-name"
             name="name"
             placeholder="Package name"
-            appearance="outline"
             autocomplete="section-createpkg one-time-code"
             style="flex:1;"
-          ></fluent-text-field>
-          <fluent-button appearance="accent" onclick="
+          >
+          <button class="btn btn-accent" onclick="
             var name = this.closest('form').querySelector('[name=name]').value;
             if(!name) return;
             fetch('/api/packages', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-          ">Create</fluent-button>
+          ">Create</button>
         </form>
-      </fluent-card>
+      </div>
 
-      <fluent-card class="packages">
-        <fluent-data-grid role="grid" grid-template-columns="1fr 1fr 180px 80px">
-          <fluent-data-grid-row row-type="header">
-            <fluent-data-grid-cell cell-type="columnheader" grid-column="1">Name</fluent-data-grid-cell>
-            <fluent-data-grid-cell cell-type="columnheader" grid-column="2">UID</fluent-data-grid-cell>
-            <fluent-data-grid-cell cell-type="columnheader" grid-column="3">Created</fluent-data-grid-cell>
-            <fluent-data-grid-cell cell-type="columnheader" grid-column="4"></fluent-data-grid-cell>
-          </fluent-data-grid-row>
-          {% for pkg in packages %}
-          <fluent-data-grid-row>
-            <fluent-data-grid-cell grid-column="1">
-              <a href="/panel/packages/{{ pkg.uid }}">{{ pkg.name }}</a>
-            </fluent-data-grid-cell>
-            <fluent-data-grid-cell grid-column="2">
-              <span class="badge mono">{{ pkg.uid }}</span>
-            </fluent-data-grid-cell>
-            <fluent-data-grid-cell grid-column="3">
-              <span class="caption2">{{ pkg.created_at }}</span>
-            </fluent-data-grid-cell>
-            <fluent-data-grid-cell grid-column="4">
-              <fluent-button appearance="stealth" size="small" onclick="
-                if(confirm('Delete this package?'))
-                  fetch('/api/packages/{{ pkg.uid }}', {method:'DELETE'}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-              ">Delete</fluent-button>
-            </fluent-data-grid-cell>
-          </fluent-data-grid-row>
-          {% endfor %}
-        </fluent-data-grid>
-      </fluent-card>
+      <div class="card packages">
+        <div class="table-wrap">
+          <table class="data-grid">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>UID</th>
+                <th>Created</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for pkg in packages %}
+              <tr>
+                <td>
+                  <a href="/panel/packages/{{ pkg.uid }}">{{ pkg.name }}</a>
+                </td>
+                <td>
+                  <span class="badge mono">{{ pkg.uid }}</span>
+                </td>
+                <td>
+                  <span class="caption2">{{ pkg.created_at }}</span>
+                </td>
+                <td>
+                  <button class="btn btn-stealth btn-sm" onclick="
+                    if(confirm('Delete this package?'))
+                      fetch('/api/packages/{{ pkg.uid }}', {method:'DELETE'}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
+                  ">Delete</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>

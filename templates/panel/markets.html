@@ -6,13 +6,13 @@
 <div class="panel-page">
   <div class="panel-header">
     <div class="nav-links">
-      <fluent-button appearance="stealth" onclick="window.location.href='/panel/packages'">Packages</fluent-button>
-      <fluent-button appearance="stealth" onclick="window.location.href='/panel/licenses'">Licenses</fluent-button>
-      <fluent-button appearance="accent" onclick="window.location.href='/panel/markets'">Markets</fluent-button>
+      <button class="btn btn-stealth" onclick="window.location.href='/panel/packages'">Packages</button>
+      <button class="btn btn-stealth" onclick="window.location.href='/panel/licenses'">Licenses</button>
+      <button class="btn btn-accent" onclick="window.location.href='/panel/markets'">Markets</button>
     </div>
     <div class="nav-actions">
       <form method="post" action="/panel/logout" style="display:inline;">
-        <fluent-button appearance="stealth" type="submit">Logout</fluent-button>
+        <button class="btn btn-stealth" type="submit">Logout</button>
       </form>
     </div>
   </div>
@@ -20,42 +20,44 @@
     <div class="col align-items-center content">
       <h1 class="m-0 mb-4">Market Configuration</h1>
 
-      <fluent-card class="p-4 mb-4" style="max-width:90%;">
+      <div class="card p-4 mb-4" style="max-width:90%;">
         <h3 class="m-0 mb-2">Add Market</h3>
         <div class="caption1 mb-3">Register a new market integration (e.g. Payhip, Gumroad).</div>
         <form onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
-          <fluent-text-field
+          <input
+            type="text"
+            class="text-field"
             id="add-market-name"
             placeholder="Market name (e.g. payhip)"
-            appearance="outline"
             autocomplete="section-addmarket one-time-code"
             style="flex:1;"
-          ></fluent-text-field>
-          <fluent-text-field
+          >
+          <input
+            type="text"
+            class="text-field"
             id="add-market-url"
             placeholder="Base URL (e.g. https://payhip.com)"
-            appearance="outline"
             autocomplete="section-addmarket url"
             style="flex:1;"
-          ></fluent-text-field>
-          <fluent-button appearance="accent" onclick="
+          >
+          <button class="btn btn-accent" onclick="
             var name = document.getElementById('add-market-name').value.trim();
             var url = document.getElementById('add-market-url').value.trim();
             if(!name) { document.getElementById('add-market-name').focus(); return; }
             if(!url) { document.getElementById('add-market-url').focus(); return; }
             fetch('/api/markets/' + encodeURIComponent(name), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({base_url: url, active: false})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-          ">Add Market</fluent-button>
+          ">Add Market</button>
         </form>
-      </fluent-card>
+      </div>
 
       {% if markets.is_empty() %}
-      <fluent-card class="p-5" style="max-width:90%; text-align:center;">
+      <div class="card p-5" style="max-width:90%; text-align:center;">
         <div class="caption1">No markets configured yet. Add one above to get started.</div>
-      </fluent-card>
+      </div>
       {% endif %}
 
       {% for market in markets %}
-      <fluent-card class="p-4 mb-4" style="max-width:90%;">
+      <div class="card p-4 mb-4" style="max-width:90%;">
         <div class="row align-items-center justify-content-between mb-3">
           <h3 class="m-0">{{ market.market }}</h3>
           <div class="row align-items-center" style="gap:0.75rem;">
@@ -75,24 +77,25 @@
         </div>
 
         <form onsubmit="return false;" class="col" style="gap:0.75rem;">
-          <fluent-text-field
+          <input
+            type="text"
+            class="text-field"
             id="market-url-{{ market.market }}"
             name="base_url"
             placeholder="Base URL"
-            appearance="outline"
             autocomplete="section-mkt-{{ market.market }} url"
             value="{{ market.base_url }}"
-          ></fluent-text-field>
-          <fluent-text-field
+          >
+          <input
+            type="password"
+            class="text-field"
             id="market-key-{{ market.market }}"
             name="api_key"
-            type="password"
             placeholder="API key (leave blank to keep current)"
-            appearance="outline"
             autocomplete="section-mkt-{{ market.market }} one-time-code"
-          ></fluent-text-field>
+          >
           <div class="row align-items-center" style="gap:0.5rem;">
-            <fluent-button appearance="accent" onclick="
+            <button class="btn btn-accent" onclick="
               var form = this.closest('form');
               var body = {};
               var url = form.querySelector('[name=base_url]').value;
@@ -101,19 +104,19 @@
               if(key) body.api_key = key;
               if(Object.keys(body).length === 0) return;
               fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-            ">Save</fluent-button>
+            ">Save</button>
             {% if market.active %}
-            <fluent-button appearance="stealth" onclick="
+            <button class="btn btn-stealth" onclick="
               fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:false})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-            ">Disable</fluent-button>
+            ">Disable</button>
             {% else %}
-            <fluent-button appearance="stealth" onclick="
+            <button class="btn btn-stealth" onclick="
               fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:true})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-            ">Enable</fluent-button>
+            ">Enable</button>
             {% endif %}
           </div>
         </form>
-      </fluent-card>
+      </div>
       {% endfor %}
     </div>
   </div>

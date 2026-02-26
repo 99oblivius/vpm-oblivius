@@ -6,13 +6,13 @@
 <div class="panel-page">
   <div class="panel-header">
     <div class="nav-links">
-      <fluent-button appearance="accent" onclick="window.location.href='/panel/packages'">Packages</fluent-button>
-      <fluent-button appearance="stealth" onclick="window.location.href='/panel/licenses'">Licenses</fluent-button>
-      <fluent-button appearance="stealth" onclick="window.location.href='/panel/markets'">Markets</fluent-button>
+      <button class="btn btn-accent" onclick="window.location.href='/panel/packages'">Packages</button>
+      <button class="btn btn-stealth" onclick="window.location.href='/panel/licenses'">Licenses</button>
+      <button class="btn btn-stealth" onclick="window.location.href='/panel/markets'">Markets</button>
     </div>
     <div class="nav-actions">
       <form method="post" action="/panel/logout" style="display:inline;">
-        <fluent-button appearance="stealth" type="submit">Logout</fluent-button>
+        <button class="btn btn-stealth" type="submit">Logout</button>
       </form>
     </div>
   </div>
@@ -20,120 +20,123 @@
     <div class="col align-items-center content">
       <div class="row align-items-center justify-content-between w-100 mb-4">
         <h1 class="m-0">{{ package.name }}</h1>
-        <fluent-button appearance="stealth" onclick="window.location.href='/panel/packages'">Back to Packages</fluent-button>
+        <button class="btn btn-stealth" onclick="window.location.href='/panel/packages'">Back to Packages</button>
       </div>
 
-      <fluent-card class="p-4 mb-4" style="max-width:90%;">
+      <div class="card p-4 mb-4" style="max-width:90%;">
         <h3 class="m-0 mb-3">Package Info</h3>
         <div class="row align-items-center mb-3" style="gap:0.5rem;">
           <span class="badge mono">{{ package.uid }}</span>
           <span class="caption2">Created: {{ package.created_at }}</span>
         </div>
         <form onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
-          <fluent-text-field
+          <input
+            type="text"
+            class="text-field"
             id="rename-package"
             name="name"
             placeholder="New package name"
-            appearance="outline"
             autocomplete="section-renamepkg one-time-code"
             style="flex:1;"
-          ></fluent-text-field>
-          <fluent-button appearance="accent" onclick="
+          >
+          <button class="btn btn-accent" onclick="
             var name = this.closest('form').querySelector('[name=name]').value;
             if(!name) return;
             fetch('/api/packages/{{ package.uid }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-          ">Rename</fluent-button>
+          ">Rename</button>
         </form>
-      </fluent-card>
-
-      <div class="row w-100 mb-4">
-        <fluent-button appearance="stealth" onclick="
-          if(confirm('Are you sure you want to delete this package? This action cannot be undone.'))
-            fetch('/api/packages/{{ package.uid }}', {method:'DELETE'}).then(function(r) { if(r.ok) window.location.href='/panel/packages'; else r.text().then(function(t) { alert(t); }); });
-        ">Delete Package</fluent-button>
       </div>
 
-      <fluent-card class="p-4 mb-4" style="max-width:90%;">
+      <div class="row w-100 mb-4">
+        <button class="btn btn-stealth" onclick="
+          if(confirm('Are you sure you want to delete this package? This action cannot be undone.'))
+            fetch('/api/packages/{{ package.uid }}', {method:'DELETE'}).then(function(r) { if(r.ok) window.location.href='/panel/packages'; else r.text().then(function(t) { alert(t); }); });
+        ">Delete Package</button>
+      </div>
+
+      <div class="card p-4 mb-4" style="max-width:90%;">
         <h3 class="m-0 mb-3">Market Linking</h3>
         <form onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
-          <fluent-select id="market-select" style="flex:1; min-width:0;">
-            <fluent-option value="" disabled selected>Select market...</fluent-option>
+          <select id="market-select" class="select" style="flex:1; min-width:0;">
+            <option value="" disabled selected>Select market...</option>
             {% for m in markets %}
-            <fluent-option value="{{ m }}">{{ m }}</fluent-option>
+            <option value="{{ m }}">{{ m }}</option>
             {% endfor %}
-          </fluent-select>
-          <fluent-text-field
+          </select>
+          <input
+            type="text"
+            class="text-field"
             id="market-product-id"
             name="product_id"
             placeholder="Product ID"
-            appearance="outline"
             autocomplete="section-marketlink one-time-code"
             style="flex:1;"
-          ></fluent-text-field>
-          <fluent-button appearance="accent" onclick="
+          >
+          <button class="btn btn-accent" onclick="
             var market = document.getElementById('market-select').value;
             var product_id = document.getElementById('market-product-id').value;
             if(!market || !product_id) return;
             fetch('/api/packages/{{ package.uid }}/markets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({market:market, product_id:product_id})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-          ">Link Market</fluent-button>
+          ">Link Market</button>
         </form>
-      </fluent-card>
+      </div>
 
-      <fluent-card class="p-4 mb-4" style="max-width:90%;">
+      <div class="card p-4 mb-4" style="max-width:90%;">
         <h3 class="m-0 mb-3">Upload Version</h3>
         <form id="upload-form" onsubmit="return false;">
           <div class="row align-items-center mb-3" style="gap:0.5rem;">
-            <fluent-text-field
+            <input
+              type="text"
+              class="text-field"
               id="upload-version"
               placeholder="Version (e.g. 1.0.0)"
-              appearance="outline"
               autocomplete="section-uploadver one-time-code"
               style="flex:0 0 200px;"
-            ></fluent-text-field>
+            >
             <label class="upload-file-label">
               <span id="upload-file-text">Choose file (.zip, .unitypackage, .tar.gz, .tgz)</span>
               <input type="file" id="upload-file" accept=".zip,.unitypackage,.tar.gz,.tgz" style="display:none;"
                 onchange="document.getElementById('upload-file-text').textContent = this.files[0] ? this.files[0].name + ' (' + formatSize(this.files[0].size) + ')' : 'Choose file (.zip, .unitypackage, .tar.gz, .tgz)';">
             </label>
-            <fluent-button appearance="accent" id="upload-btn" onclick="uploadVersion()">Upload</fluent-button>
+            <button class="btn btn-accent" id="upload-btn" onclick="uploadVersion()">Upload</button>
           </div>
         </form>
         <div id="upload-progress-area" style="display:none;" class="mb-3">
-          <fluent-progress id="upload-progress"></fluent-progress>
+          <progress id="upload-progress"></progress>
           <span class="caption2" id="upload-status"></span>
         </div>
         <div id="upload-error" class="mb-3 p-3" style="display:none; background:var(--neutral-fill-hover); border-radius:4px; color:var(--error);"></div>
         <div id="upload-success" class="mb-3 p-3" style="display:none; background:var(--neutral-fill-hover); border-radius:4px;"></div>
 
         <h3 class="m-0 mb-3 mt-4">Existing Versions</h3>
-        <fluent-data-grid role="grid" grid-template-columns="1fr 1fr 180px 80px">
-          <fluent-data-grid-row row-type="header">
-            <fluent-data-grid-cell cell-type="columnheader" grid-column="1">Version</fluent-data-grid-cell>
-            <fluent-data-grid-cell cell-type="columnheader" grid-column="2">File Name</fluent-data-grid-cell>
-            <fluent-data-grid-cell cell-type="columnheader" grid-column="3">Created</fluent-data-grid-cell>
-            <fluent-data-grid-cell cell-type="columnheader" grid-column="4"></fluent-data-grid-cell>
-          </fluent-data-grid-row>
-          {% for ver in versions %}
-          <fluent-data-grid-row>
-            <fluent-data-grid-cell grid-column="1">
-              <span class="badge">{{ ver.version }}</span>
-            </fluent-data-grid-cell>
-            <fluent-data-grid-cell grid-column="2">
-              <span class="caption2">{{ ver.file_name }}</span>
-            </fluent-data-grid-cell>
-            <fluent-data-grid-cell grid-column="3">
-              <span class="caption2">{{ ver.created_at }}</span>
-            </fluent-data-grid-cell>
-            <fluent-data-grid-cell grid-column="4">
-              <fluent-button appearance="stealth" size="small" onclick="
-                if(confirm('Delete version {{ ver.version }}?'))
-                  fetch('/api/packages/{{ package.uid }}/versions/{{ ver.version }}', {method:'DELETE'}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-              ">Delete</fluent-button>
-            </fluent-data-grid-cell>
-          </fluent-data-grid-row>
-          {% endfor %}
-        </fluent-data-grid>
-      </fluent-card>
+        <div class="table-wrap">
+          <table class="data-grid">
+            <thead>
+              <tr>
+                <th>Version</th>
+                <th>File Name</th>
+                <th>Created</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ver in versions %}
+              <tr>
+                <td><span class="badge">{{ ver.version }}</span></td>
+                <td><span class="caption2">{{ ver.file_name }}</span></td>
+                <td><span class="caption2">{{ ver.created_at }}</span></td>
+                <td>
+                  <button class="btn btn-stealth btn-sm" onclick="
+                    if(confirm('Delete version {{ ver.version }}?'))
+                      fetch('/api/packages/{{ package.uid }}/versions/{{ ver.version }}', {method:'DELETE'}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
+                  ">Delete</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
