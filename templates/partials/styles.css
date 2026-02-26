@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 }
 
 * {
@@ -15,7 +15,16 @@ body {
   align-items: center;
   justify-content: center;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: var(--neutral-foreground-rest);
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+h1, h2 {
+  color: #b4a7d6;
+}
+
+h3, h4, h5, h6 {
+  color: #c4b8e0;
 }
 
 .hidden {
@@ -56,13 +65,13 @@ h1 {
 
 .caption1 {
   font-size: 1rem;
-  color: var(--neutral-foreground-hover);
+  color: #a0a0a0;
 }
 
 .caption2 {
   font-size: 0.8rem;
   margin-top: 0.25rem;
-  color: var(--neutral-foreground-rest);
+  color: #909090;
 }
 
 .packages {
@@ -116,7 +125,7 @@ h1 {
 .badge {
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
-  background-color: var(--neutral-fill-hover);
+  background-color: var(--colorNeutralBackground3);
 }
 
 .m-0 { margin: 0; }
@@ -211,11 +220,11 @@ h1 {
   font-size: 1.5rem;
   font-weight: 300;
   margin-bottom: 2rem;
-  color: var(--neutral-foreground-hover);
+  color: #b4a7d6;
 }
 
 .error-message {
-  color: var(--error);
+  color: #f48771;
   font-size: 0.9rem;
   margin-top: 0.5rem;
 }
@@ -234,8 +243,8 @@ h1 {
   justify-content: space-between;
   width: 100%;
   padding: 0.5rem 1.5rem;
-  background: var(--neutral-layer-card-container);
-  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+  background: var(--colorNeutralBackground3);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
 }
 
 .panel-header .nav-links {
@@ -279,13 +288,13 @@ h1 {
   padding: 0.4rem 1rem;
   border-radius: 4px;
   cursor: pointer;
-  border: 1px dashed var(--neutral-stroke-rest);
-  background: var(--neutral-fill-input-rest);
-  color: var(--neutral-foreground-rest);
+  border: 1px dashed var(--colorNeutralStroke1);
+  background: var(--colorNeutralBackground3);
+  color: var(--colorNeutralForeground1);
   font-size: 0.85rem;
   flex: 1;
 }
 
 .upload-file-label:hover {
-  border-color: var(--accent-foreground-rest);
+  border-color: #b4a7d6;
 }

@@ -8,7 +8,11 @@
 </head>
 <body>
   {% block content %}{% endblock %}
-  <script type="module" src="https://unpkg.com/@fluentui/web-components"></script>
+  <script type="module">
+    import { setTheme } from 'https://unpkg.com/@fluentui/web-components';
+    import { webDarkTheme } from 'https://unpkg.com/@fluentui/tokens';
+    setTheme(webDarkTheme);
+  </script>
   <script>{% include "partials/app.js" %}</script>
 </body>
 </html>
