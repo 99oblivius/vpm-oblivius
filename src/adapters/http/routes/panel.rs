@@ -157,15 +157,12 @@ async fn panel_login(
         config.refresh_token_ttl.as_secs()
     );
 
-    (
-        StatusCode::FOUND,
-        [
-            (header::LOCATION, "/panel".to_string()),
-            (header::SET_COOKIE, access_cookie),
-            (header::SET_COOKIE, refresh_cookie),
-        ],
-    )
-        .into_response()
+    let mut headers = header::HeaderMap::new();
+    headers.insert(header::LOCATION, "/panel".parse().unwrap());
+    headers.append(header::SET_COOKIE, access_cookie.parse().unwrap());
+    headers.append(header::SET_COOKIE, refresh_cookie.parse().unwrap());
+
+    (StatusCode::FOUND, headers).into_response()
 }
 
 async fn panel_logout(State(auth): State<AuthState>) -> impl IntoResponse {
@@ -175,14 +172,12 @@ async fn panel_logout(State(auth): State<AuthState>) -> impl IntoResponse {
     let clear_refresh =
         "admin_refresh=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/panel/refresh";
 
-    (
-        StatusCode::FOUND,
-        [
-            (header::LOCATION, "/panel/login".to_string()),
-            (header::SET_COOKIE, clear_access.to_string()),
-            (header::SET_COOKIE, clear_refresh.to_string()),
-        ],
-    )
+    let mut headers = header::HeaderMap::new();
+    headers.insert(header::LOCATION, "/panel/login".parse().unwrap());
+    headers.append(header::SET_COOKIE, clear_access.parse().unwrap());
+    headers.append(header::SET_COOKIE, clear_refresh.parse().unwrap());
+
+    (StatusCode::FOUND, headers)
 }
 
 async fn panel_refresh(
@@ -231,14 +226,11 @@ async fn panel_refresh(
         config.refresh_token_ttl.as_secs()
     );
 
-    (
-        StatusCode::OK,
-        [
-            (header::SET_COOKIE, access_cookie),
-            (header::SET_COOKIE, refresh_cookie),
-        ],
-    )
-        .into_response()
+    let mut headers = header::HeaderMap::new();
+    headers.append(header::SET_COOKIE, access_cookie.parse().unwrap());
+    headers.append(header::SET_COOKIE, refresh_cookie.parse().unwrap());
+
+    (StatusCode::OK, headers).into_response()
 }
 
 #[derive(Template, WebTemplate)]
