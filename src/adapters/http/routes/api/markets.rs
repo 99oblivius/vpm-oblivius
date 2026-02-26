@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use tracing::info;
 
 use crate::{
-    adapters::http::app_state::AppState,
+    adapters::http::{app_state::AppState, bounded::Bounded},
     app_error::AppResult,
     domain::{MarketCredentialStore, MarketCredentials},
 };
@@ -49,8 +49,8 @@ async fn markets_list(
 
 #[derive(Debug, Deserialize)]
 struct UpdatePayload {
-    api_key: Option<String>,
-    base_url: Option<String>,
+    api_key: Option<Bounded<2048>>,
+    base_url: Option<Bounded<2048>>,
     active: Option<bool>,
 }
 
@@ -72,10 +72,10 @@ async fn market_update(
     });
 
     if let Some(key) = payload.api_key {
-        creds.api_key = key;
+        creds.api_key = key.into();
     }
     if let Some(url) = payload.base_url {
-        creds.base_url = url;
+        creds.base_url = url.into();
     }
     if let Some(active) = payload.active {
         creds.active = active;

@@ -112,7 +112,7 @@ function generateGift() {
   btn.disabled = true;
   resultDiv.style.display = 'none';
   errorDiv.style.display = 'none';
-  fetch('/api/gift?package_id=' + encodeURIComponent(value), { method: 'POST' })
+  fetch('/api/gift', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({package_id: value}) })
     .then(function(res) {
       if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'Request failed (' + res.status + ')'); });
       return res.json();

@@ -11,7 +11,7 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::{
-    adapters::http::app_state::AppState,
+    adapters::http::{app_state::AppState, bounded::Bounded},
     use_cases::license::LicenseUseCases,
     app_error::AppResult,
 };
@@ -35,22 +35,23 @@ enum UpdateAction {
 
 #[derive(Debug, Clone, Deserialize)]
 struct UpdatePayload {
-    code: String,
+    code: Bounded<512>,
     update: UpdateAction,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 struct DeletePayload {
-    code: String,
+    code: Bounded<512>,
 }
 
 async fn license_list(
     State(license_use_cases): State<Arc<LicenseUseCases>>,
     Query(payload): Query<ListPayload>,
 ) -> AppResult<impl IntoResponse> {
-    info!("License list called: {} {}", &payload.cursor, &payload.page_size);
+    let page_size = payload.page_size.clamp(1, 1000);
+    info!("License list called: {} {}", &payload.cursor, &page_size);
     let licenses = license_use_cases
-        .list(&payload.cursor, &payload.page_size)
+        .list(&payload.cursor, &page_size)
         .await?;
     Ok((StatusCode::OK, Json(licenses)))
 }

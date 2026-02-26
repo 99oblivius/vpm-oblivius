@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::{State, Query},
+    extract::State,
     http::StatusCode,
     response::IntoResponse,
     routing,
@@ -12,7 +12,11 @@ use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 use tracing::info;
 
-use crate::{adapters::http::app_state::AppState, app_error::AppResult, use_cases::gift::GiftUseCases};
+use crate::{
+    adapters::http::{app_state::AppState, bounded::Bounded},
+    app_error::AppResult,
+    use_cases::gift::GiftUseCases,
+};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -21,9 +25,8 @@ pub fn router() -> Router<AppState> {
 
 #[derive(Debug, Clone, Deserialize)]
 struct CreatePayload {
-    package_id: String,
+    package_id: Bounded<128>,
 }
-
 
 #[derive(Debug, Clone, Serialize)]
 struct CreateResponse {
@@ -34,7 +37,7 @@ struct CreateResponse {
 
 async fn gift_create(
     State(gift_use_cases): State<Arc<GiftUseCases>>,
-    Query(payload): Query<CreatePayload>,
+    Json(payload): Json<CreatePayload>,
 ) -> AppResult<impl IntoResponse> {
     info!("Gift creation called");
 
