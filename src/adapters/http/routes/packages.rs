@@ -15,9 +15,11 @@ use crate::{
 };
 
 pub fn router(state: AppState) -> Router<AppState> {
+    let packages_dir = state.config.packages_dir.clone();
     Router::new()
-        .nest_service("/packages", ServeDir::new("assets/packages"))
+        .nest_service("/packages", ServeDir::new(packages_dir))
         .layer(middleware::from_fn_with_state(state, verify_vpm_token))
+        .layer(crate::adapters::http::rate_limit::per_ip(20, 40))
 }
 
 async fn verify_vpm_token(

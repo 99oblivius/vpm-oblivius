@@ -8,7 +8,7 @@ use http::{StatusCode, header};
 use serde::Deserialize;
 
 use crate::{
-    adapters::http::app_state::AppState,
+    adapters::http::{app_state::AppState, bounded::Bounded},
     app_error::AppResult,
     infra::config::AppConfig,
     use_cases::{license::LicenseUseCases, packages::PackageUseCases},
@@ -19,6 +19,7 @@ pub fn router() -> Router<AppState> {
         .route("/", routing::get(landing_page))
         .route("/redeem", routing::post(redeem_page))
         .route("/result", routing::get(result_page))
+        .layer(crate::adapters::http::rate_limit::per_ip(10, 20))
 }
 
 #[derive(Template, WebTemplate)]
@@ -33,7 +34,7 @@ async fn landing_page() -> LandingTemplate {
 
 #[derive(Debug, Clone, Deserialize)]
 struct RedeemPayload {
-    code: String,
+    code: Bounded<512>,
 }
 
 async fn redeem_page(

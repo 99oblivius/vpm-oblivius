@@ -12,6 +12,7 @@ use crate::{
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/index.json", routing::get(vpm_index))
+        .layer(crate::adapters::http::rate_limit::per_ip(20, 40))
 }
 
 #[derive(Serialize)]
