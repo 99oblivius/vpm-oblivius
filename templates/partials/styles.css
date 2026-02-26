@@ -142,6 +142,19 @@ button:disabled,
   border-color: transparent;
 }
 
+/* Danger / destructive button */
+.btn-danger {
+  background: transparent;
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.btn-danger:hover {
+  background: rgba(244, 135, 113, 0.12);
+  border-color: var(--error);
+  color: var(--error);
+}
+
 /* Small variant */
 button[size="small"],
 .btn-sm {
@@ -566,7 +579,7 @@ dialog::backdrop {
 }
 
 .panel-body .content {
-  max-width: 1000px;
+  max-width: 1200px;
   width: 100%;
 }
 
@@ -575,10 +588,10 @@ dialog::backdrop {
    ============================================================ */
 .packages {
   margin: 0.5rem 0 1rem 0;
-  max-width: 90%;
-  width: 90%;
+  width: 100%;
   padding: 0.25rem;
   display: flex;
+  flex-direction: column;
 }
 
 #packageGrid {

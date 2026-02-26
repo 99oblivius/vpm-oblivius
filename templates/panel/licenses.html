@@ -72,16 +72,18 @@
                 </td>
                 <td>{{ lic.source }}</td>
                 <td>{% if lic.active %}Yes{% else %}No{% endif %}</td>
-                <td style="gap:0.25rem;">
-                  {% if lic.active %}
-                  <button class="btn btn-stealth btn-sm"
-                    onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'DISABLE'})}).then(function(){location.reload();})">Disable</button>
-                  {% else %}
-                  <button class="btn btn-stealth btn-sm"
-                    onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'ENABLE'})}).then(function(){location.reload();})">Enable</button>
-                  {% endif %}
-                  <button class="btn btn-stealth btn-sm"
-                    onclick="if(confirm('Delete this license permanently?'))fetch('/api/license',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}'})}).then(function(){location.reload();})">Delete</button>
+                <td>
+                  <div class="row" style="gap:0.35rem;">
+                    {% if lic.active %}
+                    <button class="btn btn-sm"
+                      onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'DISABLE'})}).then(function(){location.reload();})">Disable</button>
+                    {% else %}
+                    <button class="btn btn-accent btn-sm"
+                      onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'ENABLE'})}).then(function(){location.reload();})">Enable</button>
+                    {% endif %}
+                    <button class="btn btn-danger btn-sm"
+                      onclick="if(confirm('Delete this license permanently?'))fetch('/api/license',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}'})}).then(function(){location.reload();})">Delete</button>
+                  </div>
                 </td>
                 <td>
                   <span class="caption2">{{ lic.created_at }}</span>
