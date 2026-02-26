@@ -30,7 +30,7 @@ pub async fn init_state() -> anyhow::Result<AppState> {
 
     let gift_use_cases = GiftUseCases::new(sqlite_arc.clone());
     let license_use_cases = LicenseUseCases::new(sqlite_arc.clone(), Arc::new(markets));
-    let package_use_cases = PackageUseCases::new(sqlite_arc.clone());
+    let package_use_cases = PackageUseCases::new(sqlite_arc.clone(), config.packages_dir.clone().into());
 
     Ok(AppState {
         config: Arc::new(config),

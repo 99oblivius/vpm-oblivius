@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use parking_lot::RwLock;
 
 use crate::app_error::AppResult;
 use crate::domain::{MarketConfigRepository, MarketCredentials};
@@ -24,16 +25,16 @@ impl MarketCredentialStore {
     }
 
     pub fn get(&self, market: &str) -> Option<MarketCredentials> {
-        self.cache.read().unwrap().get(market).cloned()
+        self.cache.read().get(market).cloned()
     }
 
     pub fn list(&self) -> Vec<MarketCredentials> {
-        self.cache.read().unwrap().values().cloned().collect()
+        self.cache.read().values().cloned().collect()
     }
 
     pub async fn update(&self, creds: MarketCredentials) -> AppResult<()> {
         self.db.upsert(&creds).await?;
-        self.cache.write().unwrap().insert(creds.market.clone(), creds);
+        self.cache.write().insert(creds.market.clone(), creds);
         Ok(())
     }
 }

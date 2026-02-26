@@ -25,6 +25,9 @@ impl IntoResponse for AppError {
             AppError::MarketError(_) => {
                 (StatusCode::BAD_GATEWAY, "Market error").into_response()
             }
+            AppError::NotFound => {
+                (StatusCode::NOT_FOUND, "Not found").into_response()
+            }
             AppError::Internal(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal error").into_response()
             }

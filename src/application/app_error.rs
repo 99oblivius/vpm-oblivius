@@ -17,6 +17,9 @@ pub enum AppError {
      #[error("Product not linked")]
      ProductNotLinked,
 
+     #[error("Not found")]
+     NotFound,
+
      #[error("Internal error: {0}")]
      Internal(String),
 }
