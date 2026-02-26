@@ -30,7 +30,14 @@ impl GiftRepository for SqliteDatabase {
         .bind(uid)
         .execute(&self.pool)
         .await
-        .map_err(AppError::from)?;
+        .map_err(AppError::from)
+        .and_then(|r| {
+            if r.rows_affected() == 0 {
+                Err(AppError::NotFound)
+            } else {
+                Ok(())
+            }
+        })?;
         Ok(())
     }
 }

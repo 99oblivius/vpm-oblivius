@@ -50,25 +50,8 @@ body {
   justify-content: flex-end;
 }
 
-.flex-wrap {
-  flex-wrap: wrap;
-}
-
-.gap-sm { gap: 0.5rem; }
-.gap-md { gap: 0.75rem; }
-.gap-lg { gap: 1rem; }
-
 h1 {
   margin-bottom: 0.5rem;
-}
-
-a {
-  color: var(--accent-foreground-rest);
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
 }
 
 .caption1 {
@@ -82,30 +65,6 @@ a:hover {
   color: var(--neutral-foreground-rest);
 }
 
-/* --- Navigation bar --- */
-.panel-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0.75rem 0;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
-}
-
-.panel-nav .nav-links {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.panel-nav .nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* --- Package grid --- */
 .packages {
   margin: 0.5rem 0 1rem 0;
   max-width: 90%;
@@ -126,25 +85,6 @@ a:hover {
   margin: 0.25rem 0;
 }
 
-/* --- Data grids --- */
-fluent-data-grid {
-  width: 100%;
-}
-
-fluent-data-grid-cell {
-  padding: 0.5rem 0.75rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-fluent-data-grid-cell[cell-type="columnheader"] {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--neutral-foreground-hover);
-}
-
-/* --- Search --- */
 .searchBlock {
   margin-top: 1rem;
   width: 100%;
@@ -159,14 +99,12 @@ fluent-data-grid-cell[cell-type="columnheader"] {
   width: 100%;
 }
 
-/* --- VCC URL field --- */
 .vccUrlField {
   min-width: 450px;
   max-width: 90%;
   flex-grow: 1;
 }
 
-/* --- Modals --- */
 #addListingToVccHelp {
   z-index: 11;
 }
@@ -175,120 +113,12 @@ fluent-data-grid-cell[cell-type="columnheader"] {
   z-index: 10;
 }
 
-/* --- Badge --- */
 .badge {
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   background-color: var(--neutral-fill-hover);
 }
 
-.badge-success {
-  background: #2e7d32;
-  color: #fff;
-}
-
-.badge-muted {
-  background: var(--neutral-fill-hover);
-  color: var(--neutral-foreground-rest);
-}
-
-/* --- Cards (panel) --- */
-.card-body {
-  padding: 1.25rem;
-}
-
-/* --- Landing page --- */
-.landing-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  width: 100%;
-  padding: 2rem;
-}
-
-.landing-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-  max-width: 600px;
-}
-
-.landing-form fluent-text-field {
-  width: 100%;
-}
-
-.landing-title {
-  font-size: 1.5rem;
-  font-weight: 300;
-  margin-bottom: 2rem;
-  color: var(--neutral-foreground-hover);
-}
-
-/* --- Messages --- */
-.error-message {
-  color: var(--error);
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-}
-
-.alert-error {
-  padding: 0.75rem;
-  border-radius: 4px;
-  background: var(--neutral-fill-hover);
-  color: var(--error);
-}
-
-.alert-success {
-  padding: 0.75rem;
-  border-radius: 4px;
-  background: var(--neutral-fill-hover);
-  color: var(--neutral-foreground-rest);
-}
-
-/* --- Upload area --- */
-.upload-file-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  border: 1px dashed var(--neutral-stroke-rest);
-  background: var(--neutral-fill-input-rest);
-  color: var(--neutral-foreground-rest);
-  font-size: 0.85rem;
-  flex: 1;
-}
-
-.upload-file-label:hover {
-  border-color: var(--accent-foreground-rest);
-}
-
-/* --- Result block --- */
-.result-block {
-  padding: 0.75rem;
-  border-radius: 4px;
-  background: var(--neutral-fill-hover);
-}
-
-/* --- Mono text --- */
-.mono {
-  font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
-  font-size: 0.85em;
-}
-
-/* --- Empty state --- */
-.empty-state {
-  padding: 2rem;
-  text-align: center;
-  color: var(--neutral-foreground-hover);
-}
-
-/* --- Spacing utilities --- */
 .m-0 { margin: 0; }
 .m-1 { margin: 0.25rem; }
 .m-2 { margin: 0.5rem; }
@@ -350,10 +180,112 @@ fluent-data-grid-cell[cell-type="columnheader"] {
 .pe-4 { padding-right: 1rem; }
 .pe-5 { padding-right: 2rem; }
 
-.w-100 {
+.w-100 { width: 100%; }
+.flex-1 { flex: 1; }
+
+/* Landing page */
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 2rem;
+}
+
+.landing-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+.landing-form fluent-text-field {
   width: 100%;
 }
 
-.flex-1 {
+.landing-title {
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin-bottom: 2rem;
+  color: var(--neutral-foreground-hover);
+}
+
+.error-message {
+  color: var(--error);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Panel layout */
+.panel-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 1.5rem;
+  background: var(--neutral-layer-card-container);
+  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.panel-header .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.panel-header .nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel-body {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.panel-body .content {
+  max-width: 1000px;
+  width: 100%;
+}
+
+.mono {
+  font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+  font-size: 0.85em;
+}
+
+.badge-success {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.upload-file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px dashed var(--neutral-stroke-rest);
+  background: var(--neutral-fill-input-rest);
+  color: var(--neutral-foreground-rest);
+  font-size: 0.85rem;
+  flex: 1;
+}
+
+.upload-file-label:hover {
+  border-color: var(--accent-foreground-rest);
 }
