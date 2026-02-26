@@ -19,8 +19,46 @@
 
   <h1 class="m-0 mb-4 w-100">Market Configuration</h1>
 
+  <fluent-card class="mb-4" style="max-width:90%;">
+    <div class="card-body">
+      <h3 class="m-0 mb-3">Add Market</h3>
+      <div class="caption1 mb-3">Register a new market integration (e.g. Payhip, Gumroad). Once added, configure its API key and base URL below.</div>
+      <form onsubmit="return false;" class="row align-items-center gap-sm">
+        <fluent-text-field
+          id="add-market-name"
+          placeholder="Market name (e.g. payhip)"
+          appearance="outline"
+          autocomplete="off"
+          style="flex:1;"
+        ></fluent-text-field>
+        <fluent-text-field
+          id="add-market-url"
+          placeholder="Base URL (e.g. https://payhip.com)"
+          appearance="outline"
+          autocomplete="off"
+          style="flex:1;"
+        ></fluent-text-field>
+        <fluent-button appearance="accent" onclick="
+          var name = document.getElementById('add-market-name').value.trim();
+          var url = document.getElementById('add-market-url').value.trim();
+          if(!name) { document.getElementById('add-market-name').focus(); return; }
+          if(!url) { document.getElementById('add-market-url').focus(); return; }
+          fetch('/api/markets/' + encodeURIComponent(name), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({base_url: url, active: false})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
+        ">Add Market</fluent-button>
+      </form>
+    </div>
+  </fluent-card>
+
+  {% if markets.is_empty() %}
+  <fluent-card style="max-width:90%;">
+    <div class="empty-state">
+      <div class="caption1">No markets configured yet. Add one above to get started.</div>
+    </div>
+  </fluent-card>
+  {% endif %}
+
   {% for market in markets %}
-  <fluent-card class="mb-4">
+  <fluent-card class="mb-4" style="max-width:90%;">
     <div class="card-body">
       <div class="row align-items-center justify-content-between mb-3">
         <h3 class="m-0">{{ market.market }}</h3>
@@ -29,7 +67,7 @@
             {% if market.updated_at.is_empty() %}
             Never configured
             {% else %}
-            Key last updated: {{ market.updated_at }}
+            Last updated: {{ market.updated_at }}
             {% endif %}
           </span>
           {% if market.active %}
@@ -41,40 +79,46 @@
       </div>
 
       <form onsubmit="return false;" class="col gap-md">
-        <fluent-text-field
-          id="market-url-{{ market.market }}"
-          name="base_url"
-          placeholder="Base URL (e.g. https://payhip.com)"
-          appearance="outline"
-          autocomplete="off"
-          value="{{ market.base_url }}"
-        ></fluent-text-field>
-        <fluent-text-field
-          id="market-key-{{ market.market }}"
-          name="api_key"
-          type="password"
-          placeholder="New API key"
-          appearance="outline"
-          autocomplete="off"
-        ></fluent-text-field>
+        <div class="row align-items-center gap-sm">
+          <fluent-text-field
+            id="market-url-{{ market.market }}"
+            name="base_url"
+            placeholder="Base URL"
+            appearance="outline"
+            autocomplete="off"
+            value="{{ market.base_url }}"
+            style="flex:1;"
+          ></fluent-text-field>
+        </div>
+        <div class="row align-items-center gap-sm">
+          <fluent-text-field
+            id="market-key-{{ market.market }}"
+            name="api_key"
+            type="password"
+            placeholder="API key (leave blank to keep current)"
+            appearance="outline"
+            autocomplete="off"
+            style="flex:1;"
+          ></fluent-text-field>
+        </div>
         <div class="row align-items-center gap-sm">
           <fluent-button appearance="accent" onclick="
-            const form = this.closest('form');
-            const body = {};
-            const url = form.querySelector('[name=base_url]').value;
-            const key = form.querySelector('[name=api_key]').value;
+            var form = this.closest('form');
+            var body = {};
+            var url = form.querySelector('[name=base_url]').value;
+            var key = form.querySelector('[name=api_key]').value;
             if(url) body.base_url = url;
             if(key) body.api_key = key;
             if(Object.keys(body).length === 0) return;
-            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
           ">Save</fluent-button>
           {% if market.active %}
           <fluent-button appearance="stealth" onclick="
-            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:false})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:false})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
           ">Disable</fluent-button>
           {% else %}
           <fluent-button appearance="stealth" onclick="
-            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:true})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+            fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:true})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
           ">Enable</fluent-button>
           {% endif %}
         </div>

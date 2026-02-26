@@ -22,7 +22,7 @@
     <fluent-button appearance="stealth" onclick="window.location.href='/panel/packages'">Back to Packages</fluent-button>
   </div>
 
-  <fluent-card class="mb-4">
+  <fluent-card class="mb-4" style="max-width:90%;">
     <div class="card-body">
       <h3 class="m-0 mb-3">Package Info</h3>
       <div class="row align-items-center mb-3 gap-sm">
@@ -39,9 +39,9 @@
           style="flex:1;"
         ></fluent-text-field>
         <fluent-button appearance="accent" onclick="
-          const name = this.closest('form').querySelector('[name=name]').value;
+          var name = this.closest('form').querySelector('[name=name]').value;
           if(!name) return;
-          fetch('/api/packages/{{ package.uid }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+          fetch('/api/packages/{{ package.uid }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
         ">Rename</fluent-button>
       </form>
     </div>
@@ -50,11 +50,11 @@
   <div class="row w-100 mb-4">
     <fluent-button appearance="stealth" onclick="
       if(confirm('Are you sure you want to delete this package? This action cannot be undone.'))
-        fetch('/api/packages/{{ package.uid }}', {method:'DELETE'}).then(r => { if(r.ok) window.location.href='/panel/packages'; else r.text().then(t => alert(t)); });
+        fetch('/api/packages/{{ package.uid }}', {method:'DELETE'}).then(function(r) { if(r.ok) window.location.href='/panel/packages'; else r.text().then(function(t) { alert(t); }); });
     ">Delete Package</fluent-button>
   </div>
 
-  <fluent-card class="mb-4">
+  <fluent-card class="mb-4" style="max-width:90%;">
     <div class="card-body">
       <h3 class="m-0 mb-3">Market Linking</h3>
       <form onsubmit="return false;" class="row align-items-center gap-sm">
@@ -72,16 +72,16 @@
           style="flex:1;"
         ></fluent-text-field>
         <fluent-button appearance="accent" onclick="
-          const market = document.getElementById('market-select').value;
-          const product_id = document.getElementById('market-product-id').value;
+          var market = document.getElementById('market-select').value;
+          var product_id = document.getElementById('market-product-id').value;
           if(!market || !product_id) return;
-          fetch('/api/packages/{{ package.uid }}/markets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({market, product_id})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+          fetch('/api/packages/{{ package.uid }}/markets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({market:market, product_id:product_id})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
         ">Link Market</fluent-button>
       </form>
     </div>
   </fluent-card>
 
-  <fluent-card class="mb-4">
+  <fluent-card class="mb-4" style="max-width:90%;">
     <div class="card-body">
       <h3 class="m-0 mb-3">Upload Version</h3>
       <form id="upload-form" onsubmit="return false;">
@@ -130,7 +130,7 @@
           <fluent-data-grid-cell grid-column="4">
             <fluent-button appearance="stealth" size="small" onclick="
               if(confirm('Delete version {{ ver.version }}?'))
-                fetch('/api/packages/{{ package.uid }}/versions/{{ ver.version }}', {method:'DELETE'}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+                fetch('/api/packages/{{ package.uid }}/versions/{{ ver.version }}', {method:'DELETE'}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
             ">Delete</fluent-button>
           </fluent-data-grid-cell>
         </fluent-data-grid-row>

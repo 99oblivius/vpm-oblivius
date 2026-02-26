@@ -19,7 +19,7 @@
 
   <h1 class="m-0 mb-4 w-100">Packages</h1>
 
-  <fluent-card class="mb-4">
+  <fluent-card class="mb-4" style="max-width:90%;">
     <div class="card-body">
       <h3 class="m-0 mb-3">Create Package</h3>
       <form onsubmit="return false;" class="row align-items-center gap-sm">
@@ -32,9 +32,9 @@
           style="flex:1;"
         ></fluent-text-field>
         <fluent-button appearance="accent" onclick="
-          const name = this.closest('form').querySelector('[name=name]').value;
+          var name = this.closest('form').querySelector('[name=name]').value;
           if(!name) return;
-          fetch('/api/packages', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+          fetch('/api/packages', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
         ">Create</fluent-button>
       </form>
     </div>
@@ -51,7 +51,7 @@
       {% for pkg in packages %}
       <fluent-data-grid-row>
         <fluent-data-grid-cell grid-column="1">
-          <a href="/panel/packages/{{ pkg.uid }}" class="packageName">{{ pkg.name }}</a>
+          <a href="/panel/packages/{{ pkg.uid }}">{{ pkg.name }}</a>
         </fluent-data-grid-cell>
         <fluent-data-grid-cell grid-column="2">
           <span class="badge mono">{{ pkg.uid }}</span>
@@ -62,7 +62,7 @@
         <fluent-data-grid-cell grid-column="4">
           <fluent-button appearance="stealth" size="small" onclick="
             if(confirm('Delete this package?'))
-              fetch('/api/packages/{{ pkg.uid }}', {method:'DELETE'}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
+              fetch('/api/packages/{{ pkg.uid }}', {method:'DELETE'}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
           ">Delete</fluent-button>
         </fluent-data-grid-cell>
       </fluent-data-grid-row>

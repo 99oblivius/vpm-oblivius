@@ -19,7 +19,7 @@
 
   <h1 class="m-0 mb-4 w-100">Licenses &amp; Gifts</h1>
 
-  <fluent-card class="mb-4">
+  <fluent-card class="mb-4" style="max-width:90%;">
     <div class="card-body">
       <h3 class="m-0 mb-3">Generate Gift Code</h3>
       <div class="row align-items-center gap-sm">
@@ -49,7 +49,7 @@
         <fluent-data-grid-cell cell-type="columnheader" grid-column="3">Package</fluent-data-grid-cell>
         <fluent-data-grid-cell cell-type="columnheader" grid-column="4">Source</fluent-data-grid-cell>
         <fluent-data-grid-cell cell-type="columnheader" grid-column="5">Active</fluent-data-grid-cell>
-        <fluent-data-grid-cell cell-type="columnheader" grid-column="6">Actions</fluent-data-grid-cell>
+        <fluent-data-grid-cell cell-type="columnheader" grid-column="6"></fluent-data-grid-cell>
         <fluent-data-grid-cell cell-type="columnheader" grid-column="7">Created</fluent-data-grid-cell>
       </fluent-data-grid-row>
       {% for lic in licenses %}
@@ -75,17 +75,17 @@
         <fluent-data-grid-cell grid-column="6" style="gap: 0.25rem;">
           {% if lic.active %}
           <fluent-button appearance="stealth" size="small"
-            onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'DISABLE'})}).then(()=>location.reload())">
+            onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'DISABLE'})}).then(function(){location.reload();})">
             Disable
           </fluent-button>
           {% else %}
           <fluent-button appearance="stealth" size="small"
-            onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'ENABLE'})}).then(()=>location.reload())">
+            onclick="fetch('/api/license',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}',update:'ENABLE'})}).then(function(){location.reload();})">
             Enable
           </fluent-button>
           {% endif %}
           <fluent-button appearance="stealth" size="small"
-            onclick="if(confirm('Delete this license permanently?'))fetch('/api/license',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}'})}).then(()=>location.reload())">
+            onclick="if(confirm('Delete this license permanently?'))fetch('/api/license',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:'{{ lic.license }}'})}).then(function(){location.reload();})">
             Delete
           </fluent-button>
         </fluent-data-grid-cell>
