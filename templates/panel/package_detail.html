@@ -54,18 +54,32 @@
   </fluent-card>
 
   <fluent-card class="p-4 w-100 mb-4">
-    <h3 class="m-0 mb-3">Versions</h3>
-    <form onsubmit="return false;" class="row align-items-center mb-3" style="gap: 0.5rem;">
-      <fluent-text-field name="version" placeholder="Version (e.g. 1.0.0)" appearance="outline" style="flex:1;"></fluent-text-field>
-      <fluent-text-field name="file_name" placeholder="File name" appearance="outline" style="flex:1;"></fluent-text-field>
-      <fluent-button appearance="accent" onclick="
-        const form = this.closest('form');
-        const version = form.querySelector('[name=version]').value;
-        const file_name = form.querySelector('[name=file_name]').value;
-        if(!version || !file_name) return;
-        fetch('/api/packages/{{ package.uid }}/versions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({version, file_name})}).then(r => { if(r.ok) location.reload(); else r.text().then(t => alert(t)); });
-      ">Add</fluent-button>
+    <h3 class="m-0 mb-3">Upload Version</h3>
+    <form id="upload-form" onsubmit="return false;">
+      <div class="row align-items-center mb-3" style="gap: 0.5rem;">
+        <fluent-text-field id="upload-version" placeholder="Version (e.g. 1.0.0)" appearance="outline" style="flex:1; max-width:200px;"></fluent-text-field>
+        <label class="upload-file-label" id="upload-file-label" style="
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          padding: 0.4rem 1rem; border-radius: 4px; cursor: pointer;
+          border: 1px dashed var(--neutral-stroke-rest, #888);
+          background: var(--neutral-fill-input-rest, transparent);
+          color: var(--neutral-foreground-rest); font-size: 0.85rem; flex: 1;
+        ">
+          <span id="upload-file-text">Choose file (.zip, .unitypackage, .tar.gz, .tgz)</span>
+          <input type="file" id="upload-file" accept=".zip,.unitypackage,.tar.gz,.tgz" style="display:none;"
+            onchange="document.getElementById('upload-file-text').textContent = this.files[0] ? this.files[0].name + ' (' + formatSize(this.files[0].size) + ')' : 'Choose file (.zip, .unitypackage, .tar.gz, .tgz)';">
+        </label>
+        <fluent-button appearance="accent" id="upload-btn" onclick="uploadVersion()">Upload</fluent-button>
+      </div>
     </form>
+    <div id="upload-progress-area" style="display:none;" class="mb-3">
+      <fluent-progress id="upload-progress"></fluent-progress>
+      <span class="caption2" id="upload-status"></span>
+    </div>
+    <div id="upload-error" style="display:none; padding: 0.5rem; border-radius: 4px; background: #fdd; color: #900;" class="mb-3"></div>
+    <div id="upload-success" style="display:none; padding: 0.5rem; border-radius: 4px; background: #dfd; color: #090;" class="mb-3"></div>
+
+    <h3 class="m-0 mb-3 mt-4">Existing Versions</h3>
     <fluent-data-grid role="grid" grid-template-columns="1fr 1fr 200px 80px">
       <fluent-data-grid-row row-type="header">
         <fluent-data-grid-cell cell-type="columnheader" grid-column="1">Version</fluent-data-grid-cell>
@@ -95,4 +109,80 @@
     </fluent-data-grid>
   </fluent-card>
 </div>
+
+<script>
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+  return (bytes / 1073741824).toFixed(2) + ' GB';
+}
+
+function uploadVersion() {
+  var versionField = document.getElementById('upload-version');
+  var fileInput = document.getElementById('upload-file');
+  var btn = document.getElementById('upload-btn');
+  var progressArea = document.getElementById('upload-progress-area');
+  var progressBar = document.getElementById('upload-progress');
+  var statusText = document.getElementById('upload-status');
+  var errorDiv = document.getElementById('upload-error');
+  var successDiv = document.getElementById('upload-success');
+
+  var version = versionField.value.trim();
+  var file = fileInput.files[0];
+
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+
+  if (!version) { versionField.focus(); return; }
+  if (!file) { alert('Please select a file to upload.'); return; }
+
+  var existingVersions = [{% for ver in versions %}'{{ ver.version }}',{% endfor %}];
+  if (existingVersions.includes(version)) {
+    if (!confirm('Version ' + version + ' already exists. This will overwrite the existing file. Continue?')) return;
+  }
+
+  btn.disabled = true;
+  progressArea.style.display = 'block';
+  statusText.textContent = 'Uploading...';
+
+  var formData = new FormData();
+  formData.append('version', version);
+  formData.append('file', file);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/packages/{{ package.uid }}/versions');
+
+  xhr.upload.onprogress = function(e) {
+    if (e.lengthComputable) {
+      var pct = Math.round((e.loaded / e.total) * 100);
+      progressBar.value = pct;
+      statusText.textContent = 'Uploading... ' + formatSize(e.loaded) + ' / ' + formatSize(e.total) + ' (' + pct + '%)';
+    }
+  };
+
+  xhr.onload = function() {
+    btn.disabled = false;
+    if (xhr.status === 201) {
+      progressArea.style.display = 'none';
+      successDiv.textContent = 'Version ' + version + ' uploaded successfully.';
+      successDiv.style.display = 'block';
+      setTimeout(function() { location.reload(); }, 1000);
+    } else {
+      progressArea.style.display = 'none';
+      errorDiv.textContent = 'Upload failed: ' + (xhr.responseText || 'Unknown error (' + xhr.status + ')');
+      errorDiv.style.display = 'block';
+    }
+  };
+
+  xhr.onerror = function() {
+    btn.disabled = false;
+    progressArea.style.display = 'none';
+    errorDiv.textContent = 'Upload failed: Network error';
+    errorDiv.style.display = 'block';
+  };
+
+  xhr.send(formData);
+}
+</script>
 {% endblock %}

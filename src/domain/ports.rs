@@ -27,9 +27,8 @@ pub trait PackageRepository: Send + Sync {
     async fn delete(&self, uid: &str) -> AppResult<()>;
     async fn link_market(&self, uid: &str, market: &str, product_id: &str) -> AppResult<()>;
 
-    async fn add_version(&self, uid: &str, version: &str, file_name: &str) -> AppResult<()>;
+    async fn upsert_version(&self, uid: &str, version: &str, file_name: &str) -> AppResult<()>;
     async fn get_versions(&self, uid: &str) -> AppResult<Vec<PackageVersion>>;
-    async fn update_version(&self, uid: &str, version: &str, file_name: &str) -> AppResult<()>;
     async fn delete_version(&self, uid: &str, version: &str) -> AppResult<()>;
 
     async fn get_by_uid(&self, uid: &str) -> AppResult<Option<Package>>;

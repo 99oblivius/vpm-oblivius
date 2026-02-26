@@ -102,11 +102,12 @@ impl PackageRepository for SqliteDatabase {
         Ok(())
     }
 
-    async fn add_version(&self, uid: &str, version: &str, file_name: &str) -> AppResult<()> {
+    async fn upsert_version(&self, uid: &str, version: &str, file_name: &str) -> AppResult<()> {
         sqlx::query(
             r#"
             INSERT INTO package_versions (package_id, version, file_name)
             SELECT id, $2, $3 FROM packages WHERE uid = $1
+            ON CONFLICT(package_id, version) DO UPDATE SET file_name = $3
             "#,
         )
         .bind(uid)
@@ -134,24 +135,6 @@ impl PackageRepository for SqliteDatabase {
         .map_err(AppError::from)?;
 
         Ok(rows.into_iter().map(PackageVersion::from).collect())
-    }
-
-    async fn update_version(&self, uid: &str, version: &str, file_name: &str) -> AppResult<()> {
-        sqlx::query(
-            r#"
-            UPDATE package_versions
-            SET file_name = $3
-            WHERE package_id = (SELECT id FROM packages WHERE uid = $1)
-              AND version = $2
-            "#,
-        )
-        .bind(uid)
-        .bind(version)
-        .bind(file_name)
-        .execute(&self.pool)
-        .await
-        .map_err(AppError::from)?;
-        Ok(())
     }
 
     async fn delete_version(&self, uid: &str, version: &str) -> AppResult<()> {
