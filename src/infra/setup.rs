@@ -44,9 +44,9 @@ pub async fn init_state() -> anyhow::Result<AppState> {
 
 pub fn init_tracing() {
     let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| "vpm_oblivius,tower_http=debug".into());
+        .unwrap_or_else(|_| "vpm_oblivius=info,tower_http=info".into());
 
-    let console_layer = fmt::layer().with_target(true).with_level(true).pretty();
+    let console_layer = fmt::layer().with_target(false).with_level(true).compact();
 
     tracing_subscriber::registry()
         .with(filter)

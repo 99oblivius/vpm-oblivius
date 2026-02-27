@@ -51,12 +51,12 @@
             </thead>
             <tbody>
               {% for lic in licenses %}
-              <tr{% if lic.use_count > 0 %} style="background:rgba(46,125,50,0.08)"{% endif %}>
+              <tr{% if !lic.active %} style="background:rgba(244,135,113,0.06)"{% else if lic.use_count > 0 %} style="background:rgba(46,125,50,0.08)"{% endif %}>
                 <td style="white-space:nowrap;">
                   <span class="mono" title="{{ lic.license }}">{{ lic.license }}</span>
                 </td>
                 <td style="white-space:nowrap; position:relative;">
-                  <span class="mono token-truncated" style="cursor:pointer; max-width:8ch; display:inline-block; overflow:hidden; text-overflow:ellipsis; vertical-align:middle;" title="Click to reveal" onclick="showTokenPopup(this, '{{ lic.token }}')">{{ lic.token }}</span>
+                  <span class="mono" style="cursor:pointer; max-width:8ch; display:inline-block; overflow:hidden; text-overflow:ellipsis; vertical-align:middle;" title="Click to reveal" data-token="{{ lic.token }}" onclick="showTokenPopup(this)">{{ lic.token }}</span>
                 </td>
                 <td>
                   <div class="col" style="gap:0.15rem;">
@@ -106,14 +106,15 @@
 </div>
 
 <script>
-function showTokenPopup(el, token) {
+function showTokenPopup(el) {
   var existing = document.querySelector('.token-popup');
   if (existing) existing.remove();
+  var token = el.getAttribute('data-token');
   var popup = document.createElement('div');
   popup.className = 'token-popup';
-  popup.style.cssText = 'position:absolute; left:0; top:100%; z-index:10; background:var(--neutral-fill-hover); border:1px solid var(--neutral-stroke); border-radius:4px; padding:0.5rem; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+  popup.style.cssText = 'position:absolute; left:0; top:100%; z-index:10; background:var(--bg-elevated); border:1px solid var(--border-color); border-radius:4px; padding:0.5rem; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.3);';
   popup.innerHTML = '<span class="mono" style="user-select:all;">' + token + '</span>';
-  el.parentElement.appendChild(popup);
+  el.closest('td').appendChild(popup);
   function dismiss(e) {
     if (!popup.contains(e.target) && e.target !== el) {
       popup.remove();

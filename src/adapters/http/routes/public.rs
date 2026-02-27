@@ -9,7 +9,6 @@ use serde::Deserialize;
 
 use crate::{
     adapters::http::{self, app_state::AppState, bounded::Bounded},
-    app_error::AppResult,
     infra::config::AppConfig,
     use_cases::{license::LicenseUseCases, packages::PackageUseCases},
 };
@@ -39,18 +38,28 @@ struct RedeemPayload {
 async fn redeem_page(
     State(license_use_cases): State<Arc<LicenseUseCases>>,
     Form(payload): Form<RedeemPayload>,
-) -> AppResult<impl IntoResponse> {
-    let token = license_use_cases.redeem(&payload.code).await?;
+) -> impl IntoResponse {
+    let token = match license_use_cases.redeem(&payload.code).await {
+        Ok(t) => t,
+        Err(e) => {
+            let msg = match e {
+                crate::app_error::AppError::InvalidLicense => "Invalid or expired license".to_string(),
+                crate::app_error::AppError::ProductNotLinked => "This product was not registered. If you believe this to be an error, reach out to the seller.".to_string(),
+                _ => "Something went wrong. Please try again.".to_string(),
+            };
+            return LandingTemplate { error: Some(msg) }.into_response();
+        }
+    };
 
     let cookie = format!(
         "redeem_result={}; HttpOnly; Secure; SameSite=Strict; Max-Age=60; Path=/",
         token
     );
 
-    Ok((
+    (
         StatusCode::FOUND,
         [(header::LOCATION, "/redeem".to_string()), (header::SET_COOKIE, cookie)],
-    ))
+    ).into_response()
 }
 
 struct ResultPackage {

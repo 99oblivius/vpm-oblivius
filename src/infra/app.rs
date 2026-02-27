@@ -3,7 +3,10 @@ use axum::{
     http::{self, header, Method, Uri},
     Router,
 };
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tower_http::{
+    cors::CorsLayer,
+    trace::TraceLayer,
+};
 use uuid::Uuid;
 
 use crate::{adapters::http::app_state::AppState, infra::setup::init_tracing};
@@ -53,16 +56,22 @@ pub fn create_app(app_state: AppState) -> Router {
         .layer(DefaultBodyLimit::max(1024 * 64)) // 64 KB max request body
         .layer(crate::adapters::http::rate_limit::per_ip(100, 200))
         .layer(
-            TraceLayer::new_for_http().make_span_with(|request: &http::Request<_>| {
-                let request_id = Uuid::new_v4();
-                let safe_uri = sanitize_uri(request.uri());
-                tracing::info_span!(
-                    "http-request",
-                    method = %request.method(),
-                    uri = %safe_uri,
-                    version = ?request.version(),
-                    request_id = %request_id
-                )
-            }),
+            TraceLayer::new_for_http()
+                .make_span_with(|request: &http::Request<_>| {
+                    let request_id = Uuid::new_v4();
+                    let safe_uri = sanitize_uri(request.uri());
+                    tracing::info_span!(
+                        "req",
+                        id = %request_id,
+                        method = %request.method(),
+                        uri = %safe_uri,
+                    )
+                })
+                .on_request(())
+                .on_response(
+                    |response: &http::Response<_>, latency: std::time::Duration, _span: &tracing::Span| {
+                        tracing::info!(status = %response.status().as_u16(), latency_ms = latency.as_millis());
+                    },
+                ),
         )
 }
