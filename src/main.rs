@@ -1,4 +1,4 @@
-// Copyright 2025 oblivius
+// Copyright 2026 oblivius
 // SPDX-License-Identifier: AGPL-3.0-only
 
 use tracing::info;
