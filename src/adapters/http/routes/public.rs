@@ -23,11 +23,14 @@ pub fn router() -> Router<AppState> {
 #[derive(Template, WebTemplate)]
 #[template(path = "public/landing.html")]
 struct LandingTemplate {
+    brand_name: String,
     error: Option<String>,
 }
 
-async fn landing_page() -> LandingTemplate {
-    LandingTemplate { error: None }
+async fn landing_page(
+    State(config): State<Arc<AppConfig>>,
+) -> LandingTemplate {
+    LandingTemplate { brand_name: config.brand_name.clone(), error: None }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -36,12 +39,14 @@ struct RedeemPayload {
 }
 
 async fn redeem_page(
+    State(config): State<Arc<AppConfig>>,
     State(license_use_cases): State<Arc<LicenseUseCases>>,
     form: Result<Form<RedeemPayload>, FormRejection>,
 ) -> impl IntoResponse {
+    let brand = config.brand_name.clone();
     let payload = match form {
         Ok(Form(p)) => p,
-        Err(_) => return LandingTemplate { error: Some("Please enter a license or gift code.".to_string()) }.into_response(),
+        Err(_) => return LandingTemplate { brand_name: brand, error: Some("Please enter a license or gift code.".to_string()) }.into_response(),
     };
     let token = match license_use_cases.redeem(&payload.code).await {
         Ok(t) => t,
@@ -51,7 +56,7 @@ async fn redeem_page(
                 crate::app_error::AppError::ProductNotLinked => "This product was not registered. If you believe this to be an error, reach out to the seller.".to_string(),
                 _ => "Something went wrong. Please try again.".to_string(),
             };
-            return LandingTemplate { error: Some(msg) }.into_response();
+            return LandingTemplate { brand_name: brand, error: Some(msg) }.into_response();
         }
     };
 
@@ -75,6 +80,7 @@ struct ResultPackage {
 #[derive(Template, WebTemplate)]
 #[template(path = "public/result.html")]
 struct ResultTemplate {
+    brand_name: String,
     listing_url: String,
     packages: Vec<ResultPackage>,
 }
@@ -85,6 +91,7 @@ async fn result_page(
     State(config): State<Arc<AppConfig>>,
     State(package_use_cases): State<Arc<PackageUseCases>>,
 ) -> impl IntoResponse {
+    let brand = config.brand_name.clone();
     let Some(cookie) = jar.get("redeem_result") else {
         return Redirect::to("/").into_response();
     };
@@ -95,7 +102,7 @@ async fn result_page(
 
     let package = match package_use_cases.get_package_for_token(token).await {
         Ok(Some(pkg)) => pkg,
-        _ => return LandingTemplate { error: Some("Invalid or expired license".to_string()) }.into_response(),
+        _ => return LandingTemplate { brand_name: brand, error: Some("Invalid or expired license".to_string()) }.into_response(),
     };
 
     let versions = package_use_cases
@@ -115,6 +122,7 @@ async fn result_page(
     }];
 
     ResultTemplate {
+        brand_name: brand,
         listing_url,
         packages,
     }

@@ -70,9 +70,9 @@ async fn vpm_index(
     }
 
     let listing = serde_json::json!({
-        "name": "vpm-oblivius",
-        "id": "dev.oblivius.vpm-oblivius",
-        "author": "oblivius",
+        "name": config.brand_name,
+        "id": config.listing_id,
+        "author": config.listing_author,
         "url": listing_url,
         "packages": {
             &package.uid: {

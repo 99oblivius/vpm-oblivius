@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}oblivius Packages{% endblock %}
+{% block title %}{{ brand_name }}{% endblock %}
 
 {% block content %}
 <div class="landing-container">
-  <div class="landing-title">oblivius Packages</div>
+  <div class="landing-title">{{ brand_name }}</div>
   <form class="landing-form" method="post" action="/redeem" onsubmit="var c=this.querySelector('[name=code]'); c.value=c.value.trim();">
     <input
       type="text"

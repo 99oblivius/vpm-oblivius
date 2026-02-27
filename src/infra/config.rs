@@ -17,6 +17,10 @@ pub struct AppConfig {
     pub admin_pass_hash: String,
 
     pub cors_origins: Vec<String>,
+
+    pub brand_name: String,
+    pub listing_id: String,
+    pub listing_author: String,
 }
 
 impl AppConfig {
@@ -56,6 +60,10 @@ impl AppConfig {
             .filter(|s| !s.is_empty())
             .collect();
 
+        let brand_name = env::var("BRAND_NAME").unwrap_or("VPM".into());
+        let listing_id = env::var("VPM_LISTING_ID").unwrap_or("com.example.vpm".into());
+        let listing_author = env::var("VPM_LISTING_AUTHOR").unwrap_or("VPM".into());
+
         Self {
             serve_addr,
 
@@ -70,6 +78,10 @@ impl AppConfig {
             admin_pass_hash,
 
             cors_origins,
+
+            brand_name,
+            listing_id,
+            listing_author,
         }
     }
 }
