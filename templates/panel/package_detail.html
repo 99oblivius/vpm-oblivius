@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ package.name }} - Admin - Oblivius{% endblock %}
+{% block title %}{{ package.display_name }} - Admin - Oblivius{% endblock %}
 
 {% block content %}
 <div class="panel-page">
@@ -19,7 +19,7 @@
   <div class="panel-body">
     <div class="col align-items-center content">
       <div class="row align-items-center justify-content-between w-100 mb-4">
-        <h1 class="m-0">{{ package.name }}</h1>
+        <h1 class="m-0">{{ package.display_name }}</h1>
         <button class="btn btn-stealth" onclick="window.location.href='/panel/packages'">Back to Packages</button>
       </div>
 
@@ -29,22 +29,6 @@
           <span class="badge mono">{{ package.uid }}</span>
           <span class="caption2">Created: {{ package.created_at }}</span>
         </div>
-        <form onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
-          <input
-            type="text"
-            class="text-field"
-            id="rename-package"
-            name="name"
-            placeholder="New package name"
-            autocomplete="section-renamepkg one-time-code"
-            style="flex:1;"
-          >
-          <button class="btn btn-accent" onclick="
-            var name = this.closest('form').querySelector('[name=name]').value;
-            if(!name) return;
-            fetch('/api/packages/{{ package.uid }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-          ">Rename</button>
-        </form>
       </div>
 
       <div class="row w-100 mb-4">
@@ -83,20 +67,13 @@
 
       <div class="card p-4 mb-4" style="max-width:90%;">
         <h3 class="m-0 mb-3">Upload Version</h3>
+        <p class="caption2 mb-3">Upload a .zip containing a package.json. Version and metadata are extracted automatically.</p>
         <form id="upload-form" onsubmit="return false;">
           <div class="row align-items-center mb-3" style="gap:0.5rem;">
-            <input
-              type="text"
-              class="text-field"
-              id="upload-version"
-              placeholder="Version (e.g. 1.0.0)"
-              autocomplete="section-uploadver one-time-code"
-              style="flex:0 0 200px;"
-            >
-            <label class="upload-file-label">
-              <span id="upload-file-text">Choose file (.zip, .unitypackage, .tar.gz, .tgz)</span>
-              <input type="file" id="upload-file" accept=".zip,.unitypackage,.tar.gz,.tgz" style="display:none;"
-                onchange="document.getElementById('upload-file-text').textContent = this.files[0] ? this.files[0].name + ' (' + formatSize(this.files[0].size) + ')' : 'Choose file (.zip, .unitypackage, .tar.gz, .tgz)';">
+            <label class="upload-file-label" style="flex:1;">
+              <span id="upload-file-text">Choose .zip file</span>
+              <input type="file" id="upload-file" accept=".zip" style="display:none;"
+                onchange="document.getElementById('upload-file-text').textContent = this.files[0] ? this.files[0].name + ' (' + formatSize(this.files[0].size) + ')' : 'Choose .zip file';">
             </label>
             <button class="btn btn-accent" id="upload-btn" onclick="uploadVersion()">Upload</button>
           </div>
@@ -150,7 +127,6 @@ function formatSize(bytes) {
 }
 
 function uploadVersion() {
-  var versionField = document.getElementById('upload-version');
   var fileInput = document.getElementById('upload-file');
   var btn = document.getElementById('upload-btn');
   var progressArea = document.getElementById('upload-progress-area');
@@ -159,30 +135,22 @@ function uploadVersion() {
   var errorDiv = document.getElementById('upload-error');
   var successDiv = document.getElementById('upload-success');
 
-  var version = versionField.value.trim();
   var file = fileInput.files[0];
 
   errorDiv.style.display = 'none';
   successDiv.style.display = 'none';
 
-  if (!version) { versionField.focus(); return; }
-  if (!file) { alert('Please select a file to upload.'); return; }
-
-  var existingVersions = [{% for ver in versions %}'{{ ver.version }}',{% endfor %}];
-  if (existingVersions.includes(version)) {
-    if (!confirm('Version ' + version + ' already exists. This will overwrite the existing file. Continue?')) return;
-  }
+  if (!file) { alert('Please select a .zip file to upload.'); return; }
 
   btn.disabled = true;
   progressArea.style.display = 'block';
   statusText.textContent = 'Uploading...';
 
   var formData = new FormData();
-  formData.append('version', version);
   formData.append('file', file);
 
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/packages/{{ package.uid }}/versions');
+  xhr.open('POST', '/api/packages/upload');
 
   xhr.upload.onprogress = function(e) {
     if (e.lengthComputable) {
@@ -196,7 +164,8 @@ function uploadVersion() {
     btn.disabled = false;
     if (xhr.status === 201) {
       progressArea.style.display = 'none';
-      successDiv.textContent = 'Version ' + version + ' uploaded successfully.';
+      var data = JSON.parse(xhr.responseText);
+      successDiv.textContent = 'Version ' + data.version + ' uploaded successfully.';
       successDiv.style.display = 'block';
       setTimeout(function() { location.reload(); }, 1000);
     } else {

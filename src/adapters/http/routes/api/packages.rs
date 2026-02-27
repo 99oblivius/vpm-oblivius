@@ -35,24 +35,13 @@ const MAX_UPLOAD_SIZE: usize = 5 * 1024 * 1024 * 1024; // 5 GB
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/packages", routing::post(package_create))
-        .route("/packages/{uid}", routing::get(package_get).patch(package_rename).delete(package_delete))
         .route(
-            "/packages/{uid}/versions",
-            routing::post(version_upload).layer(DefaultBodyLimit::max(MAX_UPLOAD_SIZE)),
+            "/packages/upload",
+            routing::post(package_upload).layer(DefaultBodyLimit::max(MAX_UPLOAD_SIZE)),
         )
+        .route("/packages/{uid}", routing::get(package_get).delete(package_delete))
         .route("/packages/{uid}/versions/{version}", routing::delete(version_delete))
         .route("/packages/{uid}/markets", routing::post(market_link))
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct CreatePayload {
-    name: Bounded<128>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct RenamePayload {
-    name: Bounded<128>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -67,23 +56,33 @@ struct PackageDetailResponse {
     versions: Vec<PackageVersion>,
 }
 
-async fn package_create(
+/// Multipart upload: expects a single `file` field containing a .zip.
+/// Version, UID, and display name are extracted from the zip's package.json.
+/// Auto-creates the package on first upload.
+async fn package_upload(
     State(use_cases): State<Arc<PackageUseCases>>,
-    Json(payload): Json<CreatePayload>,
+    mut multipart: Multipart,
 ) -> AppResult<impl IntoResponse> {
-    info!("Package creation called: {}", payload.name);
-    let package = use_cases.create(&payload.name).await?;
-    Ok((StatusCode::CREATED, Json(package)))
-}
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::Internal(format!("Multipart error: {e}")))?
+    {
+        if field.name() == Some("file") {
+            let file_name = field
+                .file_name()
+                .ok_or_else(|| AppError::Internal("file field must have a filename".into()))?
+                .to_string();
 
-async fn package_rename(
-    State(use_cases): State<Arc<PackageUseCases>>,
-    Path(uid): Path<String>,
-    Json(payload): Json<RenamePayload>,
-) -> AppResult<impl IntoResponse> {
-    info!("Package rename called: {} -> {}", uid, payload.name);
-    use_cases.rename(&uid, &payload.name).await?;
-    Ok(StatusCode::OK)
+            info!("Package upload: {}", file_name);
+
+            let mut reader = FieldChunkReader(field);
+            let result = use_cases.upload_version(&file_name, &mut reader).await?;
+            return Ok((StatusCode::CREATED, Json(result)));
+        }
+    }
+
+    Err(AppError::Internal("Missing file field in upload".into()))
 }
 
 async fn package_delete(
@@ -93,58 +92,6 @@ async fn package_delete(
     info!("Package deletion called: {}", uid);
     use_cases.delete(&uid).await?;
     Ok(StatusCode::OK)
-}
-
-/// Multipart upload: expects fields `version` (text) and `file` (binary).
-/// Overwrites existing version if it already exists.
-async fn version_upload(
-    State(use_cases): State<Arc<PackageUseCases>>,
-    Path(uid): Path<String>,
-    mut multipart: Multipart,
-) -> AppResult<impl IntoResponse> {
-    let mut version: Option<String> = None;
-    let mut uploaded = false;
-
-    while let Some(field) = multipart
-        .next_field()
-        .await
-        .map_err(|e| AppError::Internal(format!("Multipart error: {e}")))?
-    {
-        match field.name() {
-            Some("version") => {
-                let v = field
-                    .text()
-                    .await
-                    .map_err(|e| AppError::Internal(format!("Failed to read version field: {e}")))?;
-                if v.is_empty() || v.len() > 64 {
-                    return Err(AppError::Internal("version must be 1-64 characters".into()));
-                }
-                version = Some(v);
-            }
-            Some("file") => {
-                let ver = version.as_deref()
-                    .ok_or_else(|| AppError::Internal("version field must appear before file".into()))?;
-
-                let file_name = field
-                    .file_name()
-                    .ok_or_else(|| AppError::Internal("file field must have a filename".into()))?
-                    .to_string();
-
-                info!("Version upload: {} v{} ({})", uid, ver, file_name);
-
-                let mut reader = FieldChunkReader(field);
-                use_cases.upload_version(&uid, ver, &file_name, &mut reader).await?;
-                uploaded = true;
-            }
-            _ => {} // skip unknown fields
-        }
-    }
-
-    if !uploaded {
-        return Err(AppError::Internal("Missing file field in upload".into()));
-    }
-
-    Ok(StatusCode::CREATED)
 }
 
 async fn version_delete(

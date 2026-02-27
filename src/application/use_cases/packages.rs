@@ -1,28 +1,32 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use sha2::{Sha256, Digest};
 use tokio::io::AsyncWriteExt;
 
-use crate::domain::{Package, PackageRepository, PackageVersion, generate_uid};
+use crate::domain::{Package, PackageRepository, PackageVersion, extract_manifest};
 use crate::app_error::{AppError, AppResult};
 
-/// Allowed file extensions for package version files.
-const ALLOWED_EXTENSIONS: &[&str] = &[".zip", ".unitypackage", ".tar.gz", ".tgz"];
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct UploadResult {
+    pub uid: String,
+    pub version: String,
+    pub display_name: String,
+}
 
-fn validate_file_name(file_name: &str) -> AppResult<()> {
-    if file_name.is_empty() || file_name.len() > 255 {
-        return Err(AppError::Internal("Invalid file name length".into()));
+fn compute_sha256(path: &Path) -> AppResult<String> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path)
+        .map_err(|e| AppError::Internal(format!("Failed to open file for hashing: {e}")))?;
+    let mut hasher = Sha256::new();
+    let mut buf = [0u8; 8192];
+    loop {
+        let n = file.read(&mut buf)
+            .map_err(|e| AppError::Internal(format!("Failed to read file for hashing: {e}")))?;
+        if n == 0 { break; }
+        hasher.update(&buf[..n]);
     }
-    if file_name.contains('/') || file_name.contains('\\') || file_name.contains("..") {
-        return Err(AppError::Internal("Invalid characters in file name".into()));
-    }
-    let lower = file_name.to_ascii_lowercase();
-    if !ALLOWED_EXTENSIONS.iter().any(|ext| lower.ends_with(ext)) {
-        return Err(AppError::Internal(
-            format!("File name must end with one of: {}", ALLOWED_EXTENSIONS.join(", ")),
-        ));
-    }
-    Ok(())
+    Ok(format!("{:x}", hasher.finalize()))
 }
 
 #[derive(Clone)]
@@ -36,77 +40,117 @@ impl PackageUseCases {
         Self { db, packages_dir }
     }
 
-    pub async fn create(&self, name: &str) -> AppResult<Package> {
-        let uid = generate_uid();
-        self.db.create(name, &uid).await?;
-        self.db.get_by_uid(&uid).await?.ok_or(AppError::Internal("Failed to create package".into()))
-    }
-
-    pub async fn rename(&self, uid: &str, name: &str) -> AppResult<()> {
-        self.db.change_name(uid, name).await
-    }
-
     pub async fn list(&self) -> AppResult<Vec<Package>> {
         self.db.list().await
     }
 
     pub async fn delete(&self, uid: &str) -> AppResult<()> {
-        self.db.delete(uid).await
+        self.db.delete(uid).await?;
+        let dir = self.packages_dir.join(uid);
+        if dir.exists() {
+            tokio::fs::remove_dir_all(&dir).await
+                .map_err(|e| AppError::Internal(format!("Failed to remove package directory: {e}")))?;
+        }
+        Ok(())
     }
 
     pub async fn link_market(&self, uid: &str, market: &str, product_id: &str) -> AppResult<()> {
         self.db.link_market(uid, market, product_id).await
     }
 
-    /// Upload a version file, streaming chunks to disk.
-    /// Creates the package subdirectory on demand.
-    /// Overwrites existing version if it already exists.
+    /// Upload a .zip file. Extracts package.json from the zip to derive
+    /// UID, display name, version, and full manifest. Auto-creates the
+    /// package on first upload. Enforces semver. Syncs display_name from
+    /// the latest version's manifest.
     pub async fn upload_version(
         &self,
-        uid: &str,
-        version: &str,
         file_name: &str,
         chunks: &mut (dyn ChunkReader + Send),
-    ) -> AppResult<()> {
-        validate_file_name(file_name)?;
+    ) -> AppResult<UploadResult> {
+        // Validate extension
+        let lower = file_name.to_ascii_lowercase();
+        if !lower.ends_with(".zip") {
+            return Err(AppError::Internal("Only .zip files are accepted".into()));
+        }
 
-        // Ensure the package exists.
-        self.db.get_by_uid(uid).await?
-            .ok_or(AppError::NotFound)?;
+        // Write chunks to temp file
+        let tmp_dir = self.packages_dir.join(".tmp");
+        tokio::fs::create_dir_all(&tmp_dir).await
+            .map_err(|e| AppError::Internal(format!("Failed to create temp directory: {e}")))?;
 
-        // Resolve and create target directory: {packages_dir}/{uid}/
-        let dir = self.packages_dir.join(uid);
+        let tmp_name = format!(".upload-{}.tmp", uuid::Uuid::new_v4());
+        let tmp_path = tmp_dir.join(&tmp_name);
+
+        if let Err(e) = self.write_chunks(&tmp_path, chunks).await {
+            let _ = tokio::fs::remove_file(&tmp_path).await;
+            return Err(e);
+        }
+
+        // Extract manifest from zip (blocking) — validates semver
+        let tmp_path_clone = tmp_path.clone();
+        let manifest = tokio::task::spawn_blocking(move || extract_manifest(&tmp_path_clone))
+            .await
+            .map_err(|e| AppError::Internal(format!("spawn_blocking failed: {e}")))?
+            .map_err(|e| {
+                let p = tmp_path.clone();
+                tokio::spawn(async move { let _ = tokio::fs::remove_file(&p).await; });
+                e
+            })?;
+
+        // Compute SHA-256 (blocking)
+        let tmp_path_for_hash = tmp_path.clone();
+        let sha256 = tokio::task::spawn_blocking(move || compute_sha256(&tmp_path_for_hash))
+            .await
+            .map_err(|e| AppError::Internal(format!("spawn_blocking failed: {e}")))?
+            .map_err(|e| {
+                let p = tmp_path.clone();
+                tokio::spawn(async move { let _ = tokio::fs::remove_file(&p).await; });
+                e
+            })?;
+
+        // Get or create package
+        let package = self.db.get_or_create(&manifest.name).await?;
+
+        // Move temp file to final location
+        let dir = self.packages_dir.join(&package.uid);
         tokio::fs::create_dir_all(&dir).await
             .map_err(|e| AppError::Internal(format!("Failed to create package directory: {e}")))?;
 
-        let file_path = dir.join(file_name);
+        let final_name = format!("{}-v{}.zip", package.uid, manifest.version);
+        let final_path = dir.join(&final_name);
 
-        // Write to a uniquely-named temp file, then rename for atomic replacement.
-        // Random suffix prevents races if two uploads target the same version concurrently.
-        let tmp_name = format!(".upload-{}.tmp", uuid::Uuid::new_v4());
-        let tmp_path = dir.join(tmp_name);
+        tokio::fs::rename(&tmp_path, &final_path).await
+            .map_err(|e| AppError::Internal(format!("Failed to finalize file: {e}")))?;
 
-        match self.write_and_finalize(&tmp_path, &file_path, chunks).await {
-            Ok(()) => {}
-            Err(e) => {
-                let _ = tokio::fs::remove_file(&tmp_path).await;
-                return Err(e);
-            }
-        }
+        // Store manifest JSON as string
+        let manifest_json_str = serde_json::to_string(&manifest.full_json)
+            .map_err(|e| AppError::Internal(format!("Failed to serialize manifest: {e}")))?;
 
-        // Upsert DB record (insert or update if version exists).
-        self.db.upsert_version(uid, version, file_name).await?;
+        // Upsert version in DB
+        self.db.upsert_version(
+            &package.uid,
+            &manifest.version,
+            &final_name,
+            &manifest_json_str,
+            &sha256,
+        ).await?;
 
-        Ok(())
+        // Sync display_name from latest version
+        self.db.sync_display_name(&package.uid).await?;
+
+        Ok(UploadResult {
+            uid: package.uid,
+            version: manifest.version,
+            display_name: manifest.display_name,
+        })
     }
 
-    async fn write_and_finalize(
+    async fn write_chunks(
         &self,
-        tmp_path: &std::path::Path,
-        final_path: &std::path::Path,
+        path: &Path,
         chunks: &mut (dyn ChunkReader + Send),
     ) -> AppResult<()> {
-        let mut file = tokio::fs::File::create(tmp_path).await
+        let mut file = tokio::fs::File::create(path).await
             .map_err(|e| AppError::Internal(format!("Failed to create temp file: {e}")))?;
 
         while let Some(chunk) = chunks.next_chunk().await? {
@@ -116,20 +160,40 @@ impl PackageUseCases {
 
         file.sync_all().await
             .map_err(|e| AppError::Internal(format!("Failed to sync file to disk: {e}")))?;
-        drop(file);
-
-        tokio::fs::rename(tmp_path, final_path).await
-            .map_err(|e| AppError::Internal(format!("Failed to finalize file: {e}")))?;
 
         Ok(())
     }
 
     pub async fn get_versions(&self, uid: &str) -> AppResult<Vec<PackageVersion>> {
-        self.db.get_versions(uid).await
+        let mut versions = self.db.get_versions(uid).await?;
+        // Sort by semver descending
+        versions.sort_by(|a, b| {
+            let va = semver::Version::parse(&a.version).ok();
+            let vb = semver::Version::parse(&b.version).ok();
+            vb.cmp(&va)
+        });
+        Ok(versions)
     }
 
     pub async fn delete_version(&self, uid: &str, version: &str) -> AppResult<()> {
-        self.db.delete_version(uid, version).await
+        // Get the version's file_name before deleting from DB
+        let versions = self.db.get_versions(uid).await?;
+        let file_name = versions.iter()
+            .find(|v| v.version == version)
+            .map(|v| v.file_name.clone());
+
+        self.db.delete_version(uid, version).await?;
+
+        // Sync display_name in case latest was deleted
+        self.db.sync_display_name(uid).await?;
+
+        // Remove file from disk
+        if let Some(name) = file_name {
+            let file_path = self.packages_dir.join(uid).join(&name);
+            let _ = tokio::fs::remove_file(&file_path).await;
+        }
+
+        Ok(())
     }
 
     pub async fn get_by_uid(&self, uid: &str) -> AppResult<Option<Package>> {

@@ -280,7 +280,7 @@ fn default_page_size() -> i64 { 50 }
 
 struct PackageOption {
     uid: String,
-    name: String,
+    display_name: String,
 }
 
 #[derive(Template, WebTemplate)]
@@ -313,7 +313,7 @@ async fn panel_licenses(
         .await
         .unwrap_or_default()
         .into_iter()
-        .map(|p| PackageOption { uid: p.uid, name: p.name })
+        .map(|p| PackageOption { uid: p.uid, display_name: p.display_name })
         .collect();
     let show_first_page = query.cursor != i64::MAX;
     LicensesTemplate {

@@ -21,13 +21,13 @@ pub trait LicenseRepository: Send + Sync {
 
 #[async_trait]
 pub trait PackageRepository: Send + Sync {
-    async fn create(&self, name: &str, uid: &str) -> AppResult<()>;
-    async fn change_name(&self, uid: &str, name: &str) -> AppResult<()>;
     async fn list(&self) -> AppResult<Vec<Package>>;
     async fn delete(&self, uid: &str) -> AppResult<()>;
     async fn link_market(&self, uid: &str, market: &str, product_id: &str) -> AppResult<()>;
 
-    async fn upsert_version(&self, uid: &str, version: &str, file_name: &str) -> AppResult<()>;
+    async fn get_or_create(&self, uid: &str) -> AppResult<Package>;
+    async fn sync_display_name(&self, uid: &str) -> AppResult<()>;
+    async fn upsert_version(&self, uid: &str, version: &str, file_name: &str, manifest_json: &str, zip_sha256: &str) -> AppResult<()>;
     async fn get_versions(&self, uid: &str) -> AppResult<Vec<PackageVersion>>;
     async fn delete_version(&self, uid: &str, version: &str) -> AppResult<()>;
 

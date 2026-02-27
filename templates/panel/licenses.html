@@ -26,7 +26,7 @@
           <select id="gift-package-select" class="select" style="flex:1; min-width:0;">
             <option value="" disabled selected>Select package...</option>
             {% for pkg in packages %}
-            <option value="{{ pkg.uid }}">{{ pkg.name }} {{ pkg.uid }}</option>
+            <option value="{{ pkg.uid }}">{{ pkg.display_name }} {{ pkg.uid }}</option>
             {% endfor %}
           </select>
           <button class="btn btn-accent" id="gift-generate-btn" onclick="generateGift()">Generate</button>
@@ -66,7 +66,7 @@
                 </td>
                 <td>
                   <div class="col" style="gap:0.15rem;">
-                    <span>{{ lic.package_name }}</span>
+                    <span>{{ lic.package_display_name }}</span>
                     <span class="badge mono" style="font-size:0.7em;">{{ lic.package_uid }}</span>
                   </div>
                 </td>

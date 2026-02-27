@@ -13,7 +13,7 @@ struct LicenseRow {
     pub license: String,
     pub token: String,
     pub package_id: i64,
-    pub package_name: String,
+    pub package_display_name: String,
     pub package_uid: String,
     pub source: String,
     pub active: bool,
@@ -28,7 +28,7 @@ impl From<LicenseRow> for License {
             license: row.license,
             token: row.token,
             package_id: row.package_id,
-            package_name: row.package_name,
+            package_display_name: row.package_display_name,
             package_uid: row.package_uid,
             source: row.source,
             active: row.active,
@@ -56,7 +56,7 @@ impl LicenseRepository for SqliteDatabase {
             r#"
             SELECT
                 l.id, l.license, l.token, l.package_id,
-                p.name as package_name, p.uid as package_uid,
+                p.display_name as package_display_name, p.uid as package_uid,
                 l.source, l.active, l.deleted, l.created_at
             FROM licenses l
             JOIN packages p ON l.package_id = p.id

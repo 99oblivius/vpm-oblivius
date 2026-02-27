@@ -54,7 +54,7 @@ async fn redeem_page(
 }
 
 struct ResultPackage {
-    name: String,
+    display_name: String,
     uid: String,
     latest_version: String,
 }
@@ -96,7 +96,7 @@ async fn result_page(
         .unwrap_or_else(|| "-".to_string());
 
     let packages = vec![ResultPackage {
-        name: package.name,
+        display_name: package.display_name,
         uid: package.uid,
         latest_version,
     }];

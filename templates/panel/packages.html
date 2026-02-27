@@ -21,24 +21,46 @@
       <h1 class="m-0 mb-4">Packages</h1>
 
       <div class="card p-4 mb-4" style="max-width:90%;">
-        <h3 class="m-0 mb-3">Create Package</h3>
-        <form onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
-          <input
-            type="text"
-            class="text-field"
-            id="create-package-name"
-            name="name"
-            placeholder="Package name"
-            autocomplete="section-createpkg one-time-code"
-            style="flex:1;"
-          >
-          <button class="btn btn-accent" onclick="
-            var name = this.closest('form').querySelector('[name=name]').value;
-            if(!name) return;
-            fetch('/api/packages', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
-          ">Create</button>
+        <h3 class="m-0 mb-3">Upload Package</h3>
+        <form id="upload-form" onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
+          <label class="upload-file-label" style="flex:1;">
+            <span id="upload-file-text">Choose .zip file</span>
+            <input type="file" id="upload-file" accept=".zip" style="display:none;"
+              onchange="document.getElementById('upload-file-text').textContent = this.files[0] ? this.files[0].name : 'Choose .zip file';">
+          </label>
+          <button class="btn btn-accent" id="upload-btn" onclick="uploadPackage()">Upload</button>
         </form>
+        <div id="upload-error" class="mt-3 p-3" style="display:none; background:var(--neutral-fill-hover); border-radius:4px; color:var(--error);"></div>
       </div>
+<script>
+function uploadPackage() {
+  var fileInput = document.getElementById('upload-file');
+  var btn = document.getElementById('upload-btn');
+  var errorDiv = document.getElementById('upload-error');
+  var file = fileInput.files[0];
+
+  errorDiv.style.display = 'none';
+  if (!file) { alert('Please select a .zip file.'); return; }
+
+  btn.disabled = true;
+  var formData = new FormData();
+  formData.append('file', file);
+
+  fetch('/api/packages/upload', { method: 'POST', body: formData })
+    .then(function(r) {
+      if (r.ok) return r.json();
+      return r.text().then(function(t) { throw new Error(t); });
+    })
+    .then(function(data) {
+      window.location.href = '/panel/packages/' + data.uid;
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      errorDiv.textContent = e.message || 'Upload failed';
+      errorDiv.style.display = 'block';
+    });
+}
+</script>
 
       <div class="card packages">
         <div class="table-wrap">
@@ -55,7 +77,7 @@
               {% for pkg in packages %}
               <tr>
                 <td>
-                  <a href="/panel/packages/{{ pkg.uid }}">{{ pkg.name }}</a>
+                  <a href="/panel/packages/{{ pkg.uid }}">{{ pkg.display_name }}</a>
                 </td>
                 <td>
                   <span class="badge mono">{{ pkg.uid }}</span>

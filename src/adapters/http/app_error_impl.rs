@@ -28,6 +28,9 @@ impl IntoResponse for AppError {
             AppError::NotFound => {
                 (StatusCode::NOT_FOUND, "Not found").into_response()
             }
+            AppError::Conflict(msg) => {
+                (StatusCode::CONFLICT, msg).into_response()
+            }
             AppError::Internal(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal error").into_response()
             }

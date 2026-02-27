@@ -3,7 +3,7 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 pub struct Package {
     pub id: i64,
-    pub name: String,
+    pub display_name: String,
     pub uid: String,
     pub created_at: String,
 }
@@ -13,6 +13,8 @@ pub struct PackageVersion {
     pub id: i64,
     pub version: String,
     pub file_name: String,
+    pub manifest_json: String,
+    pub zip_sha256: String,
     pub created_at: String,
 }
 
@@ -32,7 +34,7 @@ pub struct License {
     pub license: String,
     pub token: String,
     pub package_id: i64,
-    pub package_name: String,
+    pub package_display_name: String,
     pub package_uid: String,
     pub source: String,
     pub active: bool,

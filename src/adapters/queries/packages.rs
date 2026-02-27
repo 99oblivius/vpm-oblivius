@@ -9,7 +9,7 @@ use crate::{
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct PackageRow {
     pub id: i64,
-    pub name: String,
+    pub display_name: String,
     pub uid: String,
     pub created_at: String,
 }
@@ -18,7 +18,7 @@ impl From<PackageRow> for Package {
     fn from(row: PackageRow) -> Self {
         Self {
             id: row.id,
-            name: row.name,
+            display_name: row.display_name,
             uid: row.uid,
             created_at: row.created_at,
         }
@@ -30,6 +30,8 @@ struct VersionRow {
     pub id: i64,
     pub version: String,
     pub file_name: String,
+    pub manifest_json: String,
+    pub zip_sha256: String,
     pub created_at: String,
 }
 
@@ -39,6 +41,8 @@ impl From<VersionRow> for PackageVersion {
             id: row.id,
             version: row.version,
             file_name: row.file_name,
+            manifest_json: row.manifest_json,
+            zip_sha256: row.zip_sha256,
             created_at: row.created_at,
         }
     }
@@ -46,29 +50,9 @@ impl From<VersionRow> for PackageVersion {
 
 #[async_trait]
 impl PackageRepository for SqliteDatabase {
-    async fn create(&self, name: &str, uid: &str) -> AppResult<()> {
-        sqlx::query("INSERT INTO packages (name, uid) VALUES ($1, $2)")
-            .bind(name)
-            .bind(uid)
-            .execute(&self.pool)
-            .await
-            .map_err(AppError::from)?;
-        Ok(())
-    }
-
-    async fn change_name(&self, uid: &str, name: &str) -> AppResult<()> {
-        sqlx::query("UPDATE packages SET name = $2 WHERE uid = $1")
-            .bind(uid)
-            .bind(name)
-            .execute(&self.pool)
-            .await
-            .map_err(AppError::from)?;
-        Ok(())
-    }
-
     async fn list(&self) -> AppResult<Vec<Package>> {
         let rows = sqlx::query_as::<_, PackageRow>(
-            "SELECT id, name, uid, created_at FROM packages ORDER BY name",
+            "SELECT id, display_name, uid, created_at FROM packages ORDER BY display_name",
         )
         .fetch_all(&self.pool)
         .await
@@ -102,17 +86,49 @@ impl PackageRepository for SqliteDatabase {
         Ok(())
     }
 
-    async fn upsert_version(&self, uid: &str, version: &str, file_name: &str) -> AppResult<()> {
+    async fn get_or_create(&self, uid: &str) -> AppResult<Package> {
+        sqlx::query("INSERT OR IGNORE INTO packages (uid) VALUES ($1)")
+            .bind(uid)
+            .execute(&self.pool)
+            .await
+            .map_err(AppError::from)?;
+        self.get_by_uid(uid)
+            .await?
+            .ok_or_else(|| AppError::Internal("Failed to get_or_create package".into()))
+    }
+
+    async fn sync_display_name(&self, uid: &str) -> AppResult<()> {
         sqlx::query(
             r#"
-            INSERT INTO package_versions (package_id, version, file_name)
-            SELECT id, $2, $3 FROM packages WHERE uid = $1
-            ON CONFLICT(package_id, version) DO UPDATE SET file_name = $3
+            UPDATE packages SET display_name = COALESCE(
+                (SELECT json_extract(pv.manifest_json, '$.displayName')
+                 FROM package_versions pv
+                 WHERE pv.package_id = packages.id
+                 ORDER BY pv.created_at DESC LIMIT 1),
+                ''
+            ) WHERE uid = $1
+            "#,
+        )
+        .bind(uid)
+        .execute(&self.pool)
+        .await
+        .map_err(AppError::from)?;
+        Ok(())
+    }
+
+    async fn upsert_version(&self, uid: &str, version: &str, file_name: &str, manifest_json: &str, zip_sha256: &str) -> AppResult<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO package_versions (package_id, version, file_name, manifest_json, zip_sha256)
+            SELECT id, $2, $3, $4, $5 FROM packages WHERE uid = $1
+            ON CONFLICT(package_id, version) DO UPDATE SET file_name = $3, manifest_json = $4, zip_sha256 = $5, created_at = datetime('now')
             "#,
         )
         .bind(uid)
         .bind(version)
         .bind(file_name)
+        .bind(manifest_json)
+        .bind(zip_sha256)
         .execute(&self.pool)
         .await
         .map_err(AppError::from)?;
@@ -122,7 +138,7 @@ impl PackageRepository for SqliteDatabase {
     async fn get_versions(&self, uid: &str) -> AppResult<Vec<PackageVersion>> {
         let rows = sqlx::query_as::<_, VersionRow>(
             r#"
-            SELECT pv.id, pv.version, pv.file_name, pv.created_at
+            SELECT pv.id, pv.version, pv.file_name, pv.manifest_json, pv.zip_sha256, pv.created_at
             FROM package_versions pv
             JOIN packages p ON pv.package_id = p.id
             WHERE p.uid = $1
@@ -155,7 +171,7 @@ impl PackageRepository for SqliteDatabase {
 
     async fn get_by_uid(&self, uid: &str) -> AppResult<Option<Package>> {
         let row = sqlx::query_as::<_, PackageRow>(
-            "SELECT id, name, uid, created_at FROM packages WHERE uid = $1",
+            "SELECT id, display_name, uid, created_at FROM packages WHERE uid = $1",
         )
         .bind(uid)
         .fetch_optional(&self.pool)
@@ -188,7 +204,7 @@ impl PackageRepository for SqliteDatabase {
     async fn get_package_for_token(&self, token: &str) -> AppResult<Option<Package>> {
         let row = sqlx::query_as::<_, PackageRow>(
             r#"
-            SELECT p.id, p.name, p.uid, p.created_at
+            SELECT p.id, p.display_name, p.uid, p.created_at
             FROM packages p
             JOIN licenses l ON l.package_id = p.id
             WHERE l.token = $1 AND l.active = 1 AND l.deleted = 0

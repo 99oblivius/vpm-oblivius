@@ -101,10 +101,10 @@
         </thead>
         <tbody>
           {% for package in packages %}
-          <tr data-package-name="{{ package.name }}">
+          <tr data-package-name="{{ package.display_name }}">
             <td>
               <div class="row align-items-center" style="gap:0.5rem;">
-                <span class="packageName">{{ package.name }}</span>
+                <span class="packageName">{{ package.display_name }}</span>
                 <span class="caption2 mono" style="margin-top:0;">{{ package.uid }}</span>
               </div>
             </td>

@@ -1,8 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use axum::{Router, extract::{Query, State}, http::StatusCode, response::IntoResponse, routing, Json};
 use ::http::HeaderMap;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
     adapters::http::{self, app_state::AppState},
@@ -14,28 +14,6 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/index.json", routing::get(vpm_index))
         .layer(crate::adapters::http::rate_limit::per_ip(20, 40))
-}
-
-#[derive(Serialize)]
-struct VpmListing {
-    name: String,
-    author: String,
-    url: String,
-    packages: HashMap<String, VpmPackageEntry>,
-}
-
-#[derive(Serialize)]
-struct VpmPackageEntry {
-    versions: HashMap<String, VpmVersionManifest>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct VpmVersionManifest {
-    name: String,
-    display_name: String,
-    version: String,
-    url: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -63,37 +41,42 @@ async fn vpm_index(
     let base_url = http::base_url_from_headers(&headers, &config.cors_origins);
     let listing_url = format!("{base_url}/index.json?token={}", query.token);
 
-    let mut version_map = HashMap::new();
+    let mut version_map = serde_json::Map::new();
     for v in &versions {
         let download_url = format!(
             "{base_url}/packages/{}/{}?token={}",
             package.uid, v.file_name, query.token
         );
-        version_map.insert(
-            v.version.clone(),
-            VpmVersionManifest {
-                name: package.uid.clone(),
-                display_name: package.name.clone(),
-                version: v.version.clone(),
-                url: download_url,
-            },
-        );
+
+        // Parse stored manifest_json, or build minimal fallback
+        let mut manifest: serde_json::Value = serde_json::from_str(&v.manifest_json)
+            .unwrap_or_else(|_| serde_json::json!({
+                "name": package.uid,
+                "displayName": package.display_name,
+                "version": v.version,
+            }));
+
+        // Inject/override url and zipSHA256
+        if let Some(obj) = manifest.as_object_mut() {
+            obj.insert("url".to_string(), serde_json::Value::String(download_url));
+            if !v.zip_sha256.is_empty() {
+                obj.insert("zipSHA256".to_string(), serde_json::Value::String(v.zip_sha256.clone()));
+            }
+        }
+
+        version_map.insert(v.version.clone(), manifest);
     }
 
-    let mut packages = HashMap::new();
-    packages.insert(
-        package.uid.clone(),
-        VpmPackageEntry {
-            versions: version_map,
-        },
-    );
-
-    let listing = VpmListing {
-        name: "Oblivius Packages".to_string(),
-        author: "Oblivius".to_string(),
-        url: listing_url,
-        packages,
-    };
+    let listing = serde_json::json!({
+        "name": "Oblivius Packages",
+        "author": "Oblivius",
+        "url": listing_url,
+        "packages": {
+            &package.uid: {
+                "versions": version_map,
+            }
+        }
+    });
 
     Json(listing).into_response()
 }
