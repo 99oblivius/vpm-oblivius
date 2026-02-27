@@ -23,6 +23,9 @@ pub enum AppError {
      #[error("Conflict: {0}")]
      Conflict(String),
 
+     #[error("{0}")]
+     BadRequest(String),
+
      #[error("Internal error: {0}")]
      Internal(String),
 }

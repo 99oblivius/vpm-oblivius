@@ -5,7 +5,7 @@ use askama::Template;
 use askama_web::WebTemplate;
 use axum::{
     Form, Router,
-    extract::{Path, Query, State},
+    extract::{Path, Query, State, rejection::FormRejection},
     http::{StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Redirect, Response},
@@ -97,8 +97,12 @@ fn verify_username(input: &str, expected: &str) -> bool {
 
 async fn panel_login(
     State(config): State<Arc<AppConfig>>,
-    Form(payload): Form<LoginPayload>,
+    form: Result<Form<LoginPayload>, FormRejection>,
 ) -> impl IntoResponse {
+    let payload = match form {
+        Ok(Form(p)) => p,
+        Err(_) => return LoginTemplate { error: Some("Invalid credentials".to_string()) }.into_response(),
+    };
     if payload.username.len() > 256 || payload.password.len() > 1024 {
         return LoginTemplate {
             error: Some("Invalid credentials".to_string()),

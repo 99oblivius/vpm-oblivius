@@ -31,6 +31,9 @@ impl IntoResponse for AppError {
             AppError::Conflict(msg) => {
                 (StatusCode::CONFLICT, msg).into_response()
             }
+            AppError::BadRequest(msg) => {
+                (StatusCode::BAD_REQUEST, msg).into_response()
+            }
             AppError::Internal(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal error").into_response()
             }

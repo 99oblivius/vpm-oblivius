@@ -71,7 +71,7 @@ async fn package_upload(
         if field.name() == Some("file") {
             let file_name = field
                 .file_name()
-                .ok_or_else(|| AppError::Internal("file field must have a filename".into()))?
+                .ok_or_else(|| AppError::BadRequest("file field must have a filename".into()))?
                 .to_string();
 
             info!("Package upload: {}", file_name);
@@ -82,7 +82,7 @@ async fn package_upload(
         }
     }
 
-    Err(AppError::Internal("Missing file field in upload".into()))
+    Err(AppError::BadRequest("Missing file field in upload".into()))
 }
 
 async fn package_delete(

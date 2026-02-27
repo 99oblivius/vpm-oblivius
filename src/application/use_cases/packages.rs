@@ -78,7 +78,7 @@ impl PackageUseCases {
         // Validate extension
         let lower = file_name.to_ascii_lowercase();
         if !lower.ends_with(".zip") {
-            return Err(AppError::Internal("Only .zip files are accepted".into()));
+            return Err(AppError::BadRequest("Only .zip files are accepted".into()));
         }
 
         // Write chunks to temp file

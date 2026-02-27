@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use askama::Template;
 use askama_web::WebTemplate;
-use axum::{Form, Router, extract::State, response::{IntoResponse, Redirect}, routing};
+use axum::{Form, Router, extract::{State, rejection::FormRejection}, response::{IntoResponse, Redirect}, routing};
 use axum_extra::extract::CookieJar;
 use ::http::{HeaderMap, StatusCode, header};
 use serde::Deserialize;
@@ -37,8 +37,12 @@ struct RedeemPayload {
 
 async fn redeem_page(
     State(license_use_cases): State<Arc<LicenseUseCases>>,
-    Form(payload): Form<RedeemPayload>,
+    form: Result<Form<RedeemPayload>, FormRejection>,
 ) -> impl IntoResponse {
+    let payload = match form {
+        Ok(Form(p)) => p,
+        Err(_) => return LandingTemplate { error: Some("Please enter a license or gift code.".to_string()) }.into_response(),
+    };
     let token = match license_use_cases.redeem(&payload.code).await {
         Ok(t) => t,
         Err(e) => {
