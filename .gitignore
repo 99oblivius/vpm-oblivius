@@ -1,6 +1,5 @@
 /target
-/data/keys.db
-/data/packages/*.zip
+/data/*
 .env
 
 
