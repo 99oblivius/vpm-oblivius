@@ -55,8 +55,8 @@
                 <td style="white-space:nowrap;">
                   <span class="mono" title="{{ lic.license }}">{{ lic.license }}</span>
                 </td>
-                <td style="white-space:nowrap; position:relative;">
-                  <span class="mono" style="cursor:pointer; max-width:8ch; display:inline-block; overflow:hidden; text-overflow:ellipsis; vertical-align:middle;" title="Click to reveal" data-token="{{ lic.token }}" onclick="showTokenPopup(this)">{{ lic.token }}</span>
+                <td style="white-space:nowrap;">
+                  <span class="mono" style="cursor:pointer; max-width:8ch; display:inline-block; overflow:hidden; text-overflow:ellipsis; vertical-align:middle;" title="Click to reveal" data-token="{{ lic.token }}" onclick="showTokenPopup(event, this)">{{ lic.token }}</span>
                 </td>
                 <td>
                   <div class="col" style="gap:0.15rem;">
@@ -106,17 +106,18 @@
 </div>
 
 <script>
-function showTokenPopup(el) {
+function showTokenPopup(e, el) {
   var existing = document.querySelector('.token-popup');
   if (existing) existing.remove();
   var token = el.getAttribute('data-token');
   var popup = document.createElement('div');
   popup.className = 'token-popup';
-  popup.style.cssText = 'position:absolute; left:0; top:100%; z-index:10; background:var(--bg-elevated); border:1px solid var(--border-color); border-radius:4px; padding:0.5rem; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+  var rect = el.getBoundingClientRect();
+  popup.style.cssText = 'position:fixed; z-index:10; background:var(--bg-elevated); border:1px solid var(--border-color); border-radius:4px; padding:0.5rem; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.3); left:' + rect.left + 'px; top:' + rect.bottom + 'px;';
   popup.innerHTML = '<span class="mono" style="user-select:all;">' + token + '</span>';
-  el.closest('td').appendChild(popup);
-  function dismiss(e) {
-    if (!popup.contains(e.target) && e.target !== el) {
+  document.body.appendChild(popup);
+  function dismiss(ev) {
+    if (!popup.contains(ev.target) && ev.target !== el) {
       popup.remove();
       document.removeEventListener('click', dismiss);
     }

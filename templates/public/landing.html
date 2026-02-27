@@ -5,7 +5,7 @@
 {% block content %}
 <div class="landing-container">
   <div class="landing-title">oblivius Packages</div>
-  <form class="landing-form" method="post" action="/redeem">
+  <form class="landing-form" method="post" action="/redeem" onsubmit="var c=this.querySelector('[name=code]'); c.value=c.value.trim();">
     <input
       type="text"
       class="text-field"
