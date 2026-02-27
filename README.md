@@ -146,3 +146,9 @@ Customers can now redeem their license keys at your root URL.
 ## Contributing
 
 Feature requests and bug reports are welcome via [Issues](../../issues). Pull requests are also appreciated, especially additional marketplace adapters.
+
+## License
+
+Copyright 2025 oblivius
+
+This program is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License](LICENSE) as published by the Free Software Foundation, version 3.

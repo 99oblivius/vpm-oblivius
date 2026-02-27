@@ -1,3 +1,6 @@
+// Copyright 2025 oblivius
+// SPDX-License-Identifier: AGPL-3.0-only
+
 use tracing::info;
 use vpm_oblivius::infra::{app::create_app, setup::init_state};
 
