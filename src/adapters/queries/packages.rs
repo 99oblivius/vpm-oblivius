@@ -105,7 +105,7 @@ impl PackageRepository for SqliteDatabase {
                  FROM package_versions pv
                  WHERE pv.package_id = packages.id
                  ORDER BY pv.created_at DESC LIMIT 1),
-                ''
+                display_name
             ) WHERE uid = $1
             "#,
         )
