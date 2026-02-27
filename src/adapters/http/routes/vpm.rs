@@ -56,12 +56,14 @@ async fn vpm_index(
                 "version": v.version,
             }));
 
-        // Inject/override url and zipSHA256
+        // Inject/override url, zipSHA256, and ensure vpmDependencies exists
         if let Some(obj) = manifest.as_object_mut() {
             obj.insert("url".to_string(), serde_json::Value::String(download_url));
             if !v.zip_sha256.is_empty() {
                 obj.insert("zipSHA256".to_string(), serde_json::Value::String(v.zip_sha256.clone()));
             }
+            obj.entry("vpmDependencies".to_string())
+                .or_insert_with(|| serde_json::json!({}));
         }
 
         version_map.insert(v.version.clone(), manifest);

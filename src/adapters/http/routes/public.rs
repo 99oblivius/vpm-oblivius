@@ -91,7 +91,7 @@ async fn result_page(
 
     let package = match package_use_cases.get_package_for_token(token).await {
         Ok(Some(pkg)) => pkg,
-        _ => return Redirect::to("/").into_response(),
+        _ => return LandingTemplate { error: Some("Invalid or expired license".to_string()) }.into_response(),
     };
 
     let versions = package_use_cases

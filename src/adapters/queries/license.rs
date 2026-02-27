@@ -44,7 +44,7 @@ impl From<LicenseRow> for License {
 impl LicenseRepository for SqliteDatabase {
     async fn get(&self, license: &str) -> AppResult<Option<String>> {
         let result = sqlx::query_scalar::<_, String>(
-            "SELECT token FROM licenses WHERE license = $1 AND deleted = 0",
+            "SELECT token FROM licenses WHERE license = $1 AND active = 1 AND deleted = 0",
         )
         .bind(license)
         .fetch_optional(&self.pool)
