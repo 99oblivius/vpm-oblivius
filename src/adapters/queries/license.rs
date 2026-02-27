@@ -42,9 +42,9 @@ impl From<LicenseRow> for License {
 
 #[async_trait]
 impl LicenseRepository for SqliteDatabase {
-    async fn get(&self, license: &str) -> AppResult<Option<String>> {
-        let result = sqlx::query_scalar::<_, String>(
-            "SELECT token FROM licenses WHERE license = $1 AND active = 1 AND deleted = 0",
+    async fn get(&self, license: &str) -> AppResult<Option<(String, i64)>> {
+        let result = sqlx::query_as::<_, (String, i64)>(
+            "SELECT token, use_count FROM licenses WHERE license = $1 AND active = 1 AND deleted = 0",
         )
         .bind(license)
         .fetch_optional(&self.pool)
@@ -88,7 +88,7 @@ impl LicenseRepository for SqliteDatabase {
         sqlx::query(
             r#"
             INSERT INTO licenses (license, token, package_id, source, use_count, created_at)
-            SELECT $1, $2, id, $3, 1, $4 FROM packages WHERE uid = $5
+            SELECT $1, $2, id, $3, 0, $4 FROM packages WHERE uid = $5
             "#,
         )
         .bind(license)

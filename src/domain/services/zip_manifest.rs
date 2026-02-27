@@ -29,27 +29,24 @@ fn validate_package_name(name: &str) -> AppResult<()> {
 }
 
 /// Extract `package.json` from a zip file at the given path.
-/// Looks for `package.json` at the root level or one directory deep.
+/// Requires `package.json` at the zip root — VCC/ALCOM expects flat zip structure.
 pub fn extract_manifest(path: &Path) -> AppResult<ZipManifest> {
     let file = std::fs::File::open(path)
         .map_err(|e| AppError::Internal(format!("Failed to open zip: {e}")))?;
     let mut archive = zip::ZipArchive::new(file)
         .map_err(|e| AppError::Internal(format!("Invalid zip archive: {e}")))?;
 
-    // Find package.json at root or one level deep
     let manifest_index = (0..archive.len())
         .find(|&i| {
             if let Ok(entry) = archive.by_index(i) {
-                let name = entry.name();
-                name == "package.json" || {
-                    let parts: Vec<&str> = name.split('/').collect();
-                    parts.len() == 2 && parts[1] == "package.json"
-                }
+                entry.name() == "package.json"
             } else {
                 false
             }
         })
-        .ok_or_else(|| AppError::Internal("No package.json found in zip (root or one level deep)".into()))?;
+        .ok_or_else(|| AppError::Internal(
+            "package.json must be at the zip root (not inside a subdirectory)".into()
+        ))?;
 
     let mut entry = archive.by_index(manifest_index)
         .map_err(|e| AppError::Internal(format!("Failed to read zip entry: {e}")))?;

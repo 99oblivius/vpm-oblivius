@@ -11,7 +11,7 @@ pub trait GiftRepository: Send + Sync {
 
 #[async_trait]
 pub trait LicenseRepository: Send + Sync {
-    async fn get(&self, license: &str) -> AppResult<Option<String>>;
+    async fn get(&self, license: &str) -> AppResult<Option<(String, i64)>>;
     async fn list(&self, cursor: &i64, page_size: &i64) -> AppResult<Vec<License>>;
     async fn register(&self, license: &str, token: &str, uid: &str, source: &str, created_at: &DateTime<Utc>) -> AppResult<()>;
     async fn update(&self, license: &str, active: bool) -> AppResult<()>;

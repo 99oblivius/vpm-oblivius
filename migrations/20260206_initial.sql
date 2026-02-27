@@ -36,7 +36,7 @@ CREATE TABLE licenses (
     source TEXT NOT NULL,
     active BOOLEAN NOT NULL DEFAULT 1,
     deleted BOOLEAN NOT NULL DEFAULT 0,
-    use_count INTEGER NOT NULL DEFAULT 0,
+    use_count INTEGER NOT NULL DEFAULT -1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

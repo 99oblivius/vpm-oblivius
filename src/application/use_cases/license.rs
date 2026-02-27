@@ -71,7 +71,10 @@ impl LicenseUseCases {
             return Err(AppError::InvalidLicense);
         }
 
-        if let Some(token) = self.db.get(license).await? {
+        if let Some((token, use_count)) = self.db.get(license).await? {
+            if use_count < 0 {
+                let _ = self.db.increment_use_count(&token).await;
+            }
             return Ok(token);
         }
 
@@ -97,7 +100,7 @@ impl LicenseUseCases {
     }
 
     pub async fn get(&self, license: &str) -> AppResult<Option<String>> {
-        self.db.get(license).await
+        Ok(self.db.get(license).await?.map(|(token, _)| token))
     }
 
     pub async fn list(&self, cursor: &i64, page_size: &i64) -> AppResult<Vec<License>> {
