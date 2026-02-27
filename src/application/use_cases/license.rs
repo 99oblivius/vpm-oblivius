@@ -119,6 +119,10 @@ impl LicenseUseCases {
         self.db.update(license, false).await
     }
 
+    pub async fn increment_use_count(&self, token: &str) -> AppResult<()> {
+        self.db.increment_use_count(token).await
+    }
+
     pub async fn delete(&self, license: &str) -> AppResult<()> {
         self.db.delete(license).await
     }

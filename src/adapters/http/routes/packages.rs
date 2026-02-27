@@ -11,7 +11,7 @@ use tower_http::services::ServeDir;
 use crate::{
     adapters::http::app_state::AppState,
     domain::verify_token,
-    use_cases::packages::PackageUseCases,
+    use_cases::{license::LicenseUseCases, packages::PackageUseCases},
 };
 
 pub fn router(state: AppState) -> Router<AppState> {
@@ -24,6 +24,7 @@ pub fn router(state: AppState) -> Router<AppState> {
 
 async fn verify_vpm_token(
     State(package_use_cases): State<Arc<PackageUseCases>>,
+    State(license_use_cases): State<Arc<LicenseUseCases>>,
     Query(params): Query<HashMap<String, String>>,
     request: Request,
     next: Next,
@@ -43,6 +44,13 @@ async fn verify_vpm_token(
 
     if package_use_cases.verify_access(uid, token).await.is_err() {
         return StatusCode::UNAUTHORIZED.into_response();
+    }
+
+    if path.ends_with(".zip") {
+        let token = token.to_string();
+        tokio::spawn(async move {
+            let _ = license_use_cases.increment_use_count(&token).await;
+        });
     }
 
     next.run(request).await

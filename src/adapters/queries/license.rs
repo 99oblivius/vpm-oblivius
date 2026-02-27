@@ -18,6 +18,7 @@ struct LicenseRow {
     pub source: String,
     pub active: bool,
     pub deleted: bool,
+    pub use_count: i64,
     pub created_at: String,
 }
 
@@ -33,6 +34,7 @@ impl From<LicenseRow> for License {
             source: row.source,
             active: row.active,
             deleted: row.deleted,
+            use_count: row.use_count,
             created_at: row.created_at,
         }
     }
@@ -57,7 +59,7 @@ impl LicenseRepository for SqliteDatabase {
             SELECT
                 l.id, l.license, l.token, l.package_id,
                 p.display_name as package_display_name, p.uid as package_uid,
-                l.source, l.active, l.deleted, l.created_at
+                l.source, l.active, l.deleted, l.use_count, l.created_at
             FROM licenses l
             JOIN packages p ON l.package_id = p.id
             WHERE l.id < $1 AND l.deleted = 0
@@ -85,8 +87,8 @@ impl LicenseRepository for SqliteDatabase {
         let created_at_str = created_at.to_rfc3339();
         sqlx::query(
             r#"
-            INSERT INTO licenses (license, token, package_id, source, created_at)
-            SELECT $1, $2, id, $3, $4 FROM packages WHERE uid = $5
+            INSERT INTO licenses (license, token, package_id, source, use_count, created_at)
+            SELECT $1, $2, id, $3, 1, $4 FROM packages WHERE uid = $5
             "#,
         )
         .bind(license)
@@ -104,6 +106,15 @@ impl LicenseRepository for SqliteDatabase {
         sqlx::query("UPDATE licenses SET active = $2 WHERE license = $1")
             .bind(license)
             .bind(active)
+            .execute(&self.pool)
+            .await
+            .map_err(AppError::from)?;
+        Ok(())
+    }
+
+    async fn increment_use_count(&self, token: &str) -> AppResult<()> {
+        sqlx::query("UPDATE licenses SET use_count = use_count + 1 WHERE token = $1 AND active = 1 AND deleted = 0")
+            .bind(token)
             .execute(&self.pool)
             .await
             .map_err(AppError::from)?;

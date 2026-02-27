@@ -83,7 +83,7 @@ function uploadPackage() {
                   <span class="badge mono">{{ pkg.uid }}</span>
                 </td>
                 <td>
-                  <span class="caption2">{{ pkg.created_at }}</span>
+                  <span class="caption2" data-timestamp="{{ pkg.created_at }}">{{ pkg.created_at }}</span>
                 </td>
                 <td>
                   <button class="btn btn-stealth btn-sm" onclick="

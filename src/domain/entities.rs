@@ -39,5 +39,6 @@ pub struct License {
     pub source: String,
     pub active: bool,
     pub deleted: bool,
+    pub use_count: i64,
     pub created_at: String,
 }
