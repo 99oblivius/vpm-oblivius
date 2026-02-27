@@ -85,4 +85,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initTimeago();
+
+  // Generate favicon from --accent CSS variable
+  (function() {
+    var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+      + '<path d="M16 2L28 9V23L16 30L4 23V9Z" fill="none" stroke="' + accent + '" stroke-width="2" stroke-linejoin="round"/>'
+      + '<line x1="16" y1="16" x2="28" y2="9" stroke="' + accent + '" stroke-width="2"/>'
+      + '<line x1="16" y1="16" x2="4" y2="9" stroke="' + accent + '" stroke-width="2"/>'
+      + '<line x1="16" y1="16" x2="16" y2="30" stroke="' + accent + '" stroke-width="2"/>'
+      + '</svg>';
+    var link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/svg+xml';
+    link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+    document.head.appendChild(link);
+  })();
 });
