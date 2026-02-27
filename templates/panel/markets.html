@@ -65,7 +65,7 @@
               {% if market.updated_at.is_empty() %}
               Never configured
               {% else %}
-              Last updated: {{ market.updated_at }}
+              Last updated: <span data-timestamp="{{ market.updated_at }}">{{ market.updated_at }}</span>
               {% endif %}
             </span>
             {% if market.active %}
@@ -114,6 +114,10 @@
               fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active:true})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
             ">Enable</button>
             {% endif %}
+            <button class="btn btn-danger" onclick="
+              if(confirm('Delete market {{ market.market }}? This will also remove all package links for this market.'))
+                fetch('/api/markets/{{ market.market }}', {method:'DELETE'}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
+            ">Delete</button>
           </div>
         </form>
       </div>

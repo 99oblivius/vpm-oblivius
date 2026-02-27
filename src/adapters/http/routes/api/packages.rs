@@ -41,7 +41,7 @@ pub fn router() -> Router<AppState> {
         )
         .route("/packages/{uid}", routing::get(package_get).delete(package_delete))
         .route("/packages/{uid}/versions/{version}", routing::delete(version_delete))
-        .route("/packages/{uid}/markets", routing::post(market_link))
+        .route("/packages/{uid}/markets", routing::post(market_link).delete(market_unlink))
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -100,6 +100,18 @@ async fn version_delete(
 ) -> AppResult<impl IntoResponse> {
     info!("Version deletion called: {} v{}", uid, version);
     use_cases.delete_version(&uid, &version).await?;
+    Ok(StatusCode::OK)
+}
+
+async fn market_unlink(
+    State(use_cases): State<Arc<PackageUseCases>>,
+    Path(uid): Path<String>,
+    Json(payload): Json<LinkMarketPayload>,
+) -> AppResult<impl IntoResponse> {
+    info!("Market unlink called: {} -> {}:{}", uid, payload.market, payload.product_id);
+    use_cases
+        .unlink_market(&uid, &payload.market, &payload.product_id)
+        .await?;
     Ok(StatusCode::OK)
 }
 

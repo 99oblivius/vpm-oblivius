@@ -86,6 +86,41 @@ impl PackageRepository for SqliteDatabase {
         Ok(())
     }
 
+    async fn unlink_market(&self, uid: &str, market: &str, product_id: &str) -> AppResult<()> {
+        sqlx::query(
+            r#"
+            DELETE FROM package_markets
+            WHERE package_id = (SELECT id FROM packages WHERE uid = $1)
+              AND market = $2
+              AND product_id = $3
+            "#,
+        )
+        .bind(uid)
+        .bind(market)
+        .bind(product_id)
+        .execute(&self.pool)
+        .await
+        .map_err(AppError::from)?;
+        Ok(())
+    }
+
+    async fn get_market_links(&self, uid: &str) -> AppResult<Vec<(String, String)>> {
+        let rows = sqlx::query_as::<_, (String, String)>(
+            r#"
+            SELECT pm.market, pm.product_id
+            FROM package_markets pm
+            JOIN packages p ON pm.package_id = p.id
+            WHERE p.uid = $1
+            ORDER BY pm.market
+            "#,
+        )
+        .bind(uid)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(AppError::from)?;
+        Ok(rows)
+    }
+
     async fn get_or_create(&self, uid: &str) -> AppResult<Package> {
         sqlx::query("INSERT OR IGNORE INTO packages (uid) VALUES ($1)")
             .bind(uid)

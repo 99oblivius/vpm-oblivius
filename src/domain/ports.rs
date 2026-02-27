@@ -16,6 +16,7 @@ pub trait LicenseRepository: Send + Sync {
     async fn register(&self, license: &str, token: &str, uid: &str, source: &str, created_at: &DateTime<Utc>) -> AppResult<()>;
     async fn update(&self, license: &str, active: bool) -> AppResult<()>;
     async fn delete(&self, license: &str) -> AppResult<()>;
+    async fn increment_use_count(&self, token: &str) -> AppResult<()>;
     async fn get_package_uid_by_market_product(&self, market: &str, product_id: &str) -> AppResult<Option<String>>;
 }
 
@@ -24,6 +25,8 @@ pub trait PackageRepository: Send + Sync {
     async fn list(&self) -> AppResult<Vec<Package>>;
     async fn delete(&self, uid: &str) -> AppResult<()>;
     async fn link_market(&self, uid: &str, market: &str, product_id: &str) -> AppResult<()>;
+    async fn unlink_market(&self, uid: &str, market: &str, product_id: &str) -> AppResult<()>;
+    async fn get_market_links(&self, uid: &str) -> AppResult<Vec<(String, String)>>;
 
     async fn get_or_create(&self, uid: &str) -> AppResult<Package>;
     async fn sync_display_name(&self, uid: &str) -> AppResult<()>;
@@ -41,6 +44,7 @@ pub trait MarketConfigRepository: Send + Sync {
     async fn list_all(&self) -> AppResult<Vec<MarketCredentials>>;
     async fn get(&self, market: &str) -> AppResult<Option<MarketCredentials>>;
     async fn upsert(&self, creds: &MarketCredentials) -> AppResult<()>;
+    async fn delete(&self, market: &str) -> AppResult<()>;
 }
 
 pub struct VerifyResult {

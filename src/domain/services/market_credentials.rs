@@ -37,4 +37,10 @@ impl MarketCredentialStore {
         self.cache.write().insert(creds.market.clone(), creds);
         Ok(())
     }
+
+    pub async fn delete(&self, market: &str) -> AppResult<()> {
+        self.db.delete(market).await?;
+        self.cache.write().remove(market);
+        Ok(())
+    }
 }

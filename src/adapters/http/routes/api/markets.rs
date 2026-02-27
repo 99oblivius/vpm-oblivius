@@ -21,7 +21,7 @@ use crate::{
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/markets", routing::get(markets_list))
-        .route("/markets/{name}", routing::patch(market_update))
+        .route("/markets/{name}", routing::patch(market_update).delete(market_delete))
 }
 
 #[derive(Debug, Serialize)]
@@ -52,6 +52,15 @@ struct UpdatePayload {
     api_key: Option<Bounded<2048>>,
     base_url: Option<Bounded<2048>>,
     active: Option<bool>,
+}
+
+async fn market_delete(
+    State(store): State<Arc<MarketCredentialStore>>,
+    Path(name): Path<String>,
+) -> AppResult<impl IntoResponse> {
+    info!("Market delete: {}", name);
+    store.delete(&name).await?;
+    Ok(StatusCode::OK)
 }
 
 async fn market_update(

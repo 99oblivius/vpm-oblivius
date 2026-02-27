@@ -27,7 +27,7 @@
         <h3 class="m-0 mb-3">Package Info</h3>
         <div class="row align-items-center mb-3" style="gap:0.5rem;">
           <span class="badge mono">{{ package.uid }}</span>
-          <span class="caption2">Created: {{ package.created_at }}</span>
+          <span class="caption2">Created: <span data-timestamp="{{ package.created_at }}">{{ package.created_at }}</span></span>
         </div>
       </div>
 
@@ -40,7 +40,7 @@
 
       <div class="card p-4 mb-4" style="max-width:90%;">
         <h3 class="m-0 mb-3">Market Linking</h3>
-        <form onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
+        <form onsubmit="return false;" class="row align-items-center mb-3" style="gap:0.5rem;">
           <select id="market-select" class="select" style="flex:1; min-width:0;">
             <option value="" disabled selected>Select market...</option>
             {% for m in markets %}
@@ -63,6 +63,33 @@
             fetch('/api/packages/{{ package.uid }}/markets', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({market:market, product_id:product_id})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
           ">Link Market</button>
         </form>
+        {% if !linked_markets.is_empty() %}
+        <div class="table-wrap">
+          <table class="data-grid">
+            <thead>
+              <tr>
+                <th>Market</th>
+                <th>Product ID</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for link in linked_markets %}
+              <tr>
+                <td>{{ link.market }}</td>
+                <td><span class="badge mono">{{ link.product_id }}</span></td>
+                <td>
+                  <button class="btn btn-stealth btn-sm" onclick="
+                    if(confirm('Unlink {{ link.market }}:{{ link.product_id }}?'))
+                      fetch('/api/packages/{{ package.uid }}/markets', {method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({market:'{{ link.market }}', product_id:'{{ link.product_id }}'})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
+                  ">Unlink</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
       </div>
 
       <div class="card p-4 mb-4" style="max-width:90%;">
@@ -101,7 +128,7 @@
               <tr>
                 <td><span class="badge">{{ ver.version }}</span></td>
                 <td><span class="caption2">{{ ver.file_name }}</span></td>
-                <td><span class="caption2">{{ ver.created_at }}</span></td>
+                <td><span class="caption2" data-timestamp="{{ ver.created_at }}">{{ ver.created_at }}</span></td>
                 <td>
                   <button class="btn btn-stealth btn-sm" onclick="
                     if(confirm('Delete version {{ ver.version }}?'))

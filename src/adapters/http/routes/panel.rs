@@ -246,12 +246,18 @@ async fn panel_packages(
     PackagesTemplate { packages }
 }
 
+struct MarketLink {
+    market: String,
+    product_id: String,
+}
+
 #[derive(Template, WebTemplate)]
 #[template(path = "panel/package_detail.html")]
 struct PackageDetailTemplate {
     package: crate::domain::Package,
     versions: Vec<crate::domain::PackageVersion>,
     markets: Vec<String>,
+    linked_markets: Vec<MarketLink>,
 }
 
 async fn panel_package_detail(
@@ -264,7 +270,14 @@ async fn panel_package_detail(
     };
     let versions = package_use_cases.get_versions(&uid).await.unwrap_or_default();
     let markets: Vec<String> = store.list().into_iter().map(|c| c.market).collect();
-    PackageDetailTemplate { package, versions, markets }.into_response()
+    let linked_markets = package_use_cases
+        .get_market_links(&uid)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(market, product_id)| MarketLink { market, product_id })
+        .collect();
+    PackageDetailTemplate { package, versions, markets, linked_markets }.into_response()
 }
 
 #[derive(Debug, Deserialize)]

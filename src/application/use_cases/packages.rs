@@ -58,6 +58,14 @@ impl PackageUseCases {
         self.db.link_market(uid, market, product_id).await
     }
 
+    pub async fn unlink_market(&self, uid: &str, market: &str, product_id: &str) -> AppResult<()> {
+        self.db.unlink_market(uid, market, product_id).await
+    }
+
+    pub async fn get_market_links(&self, uid: &str) -> AppResult<Vec<(String, String)>> {
+        self.db.get_market_links(uid).await
+    }
+
     /// Upload a .zip file. Extracts package.json from the zip to derive
     /// UID, display name, version, and full manifest. Auto-creates the
     /// package on first upload. Enforces semver. Syncs display_name from

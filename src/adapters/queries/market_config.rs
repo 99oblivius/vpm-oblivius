@@ -53,6 +53,21 @@ impl MarketConfigRepository for SqliteDatabase {
         .map_err(AppError::from)?;
         Ok(())
     }
+    async fn delete(&self, market: &str) -> AppResult<()> {
+        // Delete linked package_markets rows first
+        sqlx::query("DELETE FROM package_markets WHERE market = $1")
+            .bind(market)
+            .execute(&self.pool)
+            .await
+            .map_err(AppError::from)?;
+
+        sqlx::query("DELETE FROM market_configs WHERE market = $1")
+            .bind(market)
+            .execute(&self.pool)
+            .await
+            .map_err(AppError::from)?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
