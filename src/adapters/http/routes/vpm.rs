@@ -69,9 +69,17 @@ async fn vpm_index(
         version_map.insert(v.version.clone(), manifest);
     }
 
+    use base64::Engine;
+    use sha2::{Sha256, Digest};
+    let hash = Sha256::digest(query.token.as_bytes());
+    let token_hash = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&hash[..8]);
+    let listing_id = format!("{}.{}", config.listing_id, token_hash);
+
+    let listing_name = format!("{} - {}", config.brand_name, package.display_name);
+
     let listing = serde_json::json!({
-        "name": config.brand_name,
-        "id": config.listing_id,
+        "name": listing_name,
+        "id": listing_id,
         "author": config.listing_author,
         "url": listing_url,
         "packages": {
