@@ -200,7 +200,8 @@ input[type="email"]:focus,
 input[type="number"]:focus,
 input[type="search"]:focus,
 input[type="url"]:focus,
-textarea:focus {
+textarea:focus,
+.text-field.unsaved {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(180, 167, 214, 0.2);
 }

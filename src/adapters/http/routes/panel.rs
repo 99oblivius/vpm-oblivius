@@ -344,6 +344,7 @@ async fn panel_licenses(
 
 struct MarketView {
     market: String,
+    has_api_key: bool,
     active: bool,
     updated_at: String,
 }
@@ -364,6 +365,7 @@ async fn panel_markets(
         .into_iter()
         .map(|c| MarketView {
             market: c.market,
+            has_api_key: !c.api_key.is_empty(),
             active: c.active,
             updated_at: c.updated_at,
         })
