@@ -122,8 +122,10 @@ impl PackageRepository for SqliteDatabase {
     }
 
     async fn get_or_create(&self, uid: &str) -> AppResult<Package> {
-        sqlx::query("INSERT OR IGNORE INTO packages (uid) VALUES ($1)")
+        let now = chrono::Utc::now().to_rfc3339();
+        sqlx::query("INSERT OR IGNORE INTO packages (uid, created_at) VALUES ($1, $2)")
             .bind(uid)
+            .bind(&now)
             .execute(&self.pool)
             .await
             .map_err(AppError::from)?;
@@ -152,11 +154,12 @@ impl PackageRepository for SqliteDatabase {
     }
 
     async fn upsert_version(&self, uid: &str, version: &str, file_name: &str, manifest_json: &str, zip_sha256: &str) -> AppResult<()> {
+        let now = chrono::Utc::now().to_rfc3339();
         sqlx::query(
             r#"
-            INSERT INTO package_versions (package_id, version, file_name, manifest_json, zip_sha256)
-            SELECT id, $2, $3, $4, $5 FROM packages WHERE uid = $1
-            ON CONFLICT(package_id, version) DO UPDATE SET file_name = $3, manifest_json = $4, zip_sha256 = $5, created_at = datetime('now')
+            INSERT INTO package_versions (package_id, version, file_name, manifest_json, zip_sha256, created_at)
+            SELECT id, $2, $3, $4, $5, $6 FROM packages WHERE uid = $1
+            ON CONFLICT(package_id, version) DO UPDATE SET file_name = $3, manifest_json = $4, zip_sha256 = $5, created_at = $6
             "#,
         )
         .bind(uid)
@@ -164,6 +167,7 @@ impl PackageRepository for SqliteDatabase {
         .bind(file_name)
         .bind(manifest_json)
         .bind(zip_sha256)
+        .bind(&now)
         .execute(&self.pool)
         .await
         .map_err(AppError::from)?;
