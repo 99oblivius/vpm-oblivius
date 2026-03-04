@@ -7,11 +7,12 @@ use crate::domain::{MarketCredentialStore, MarketPort};
 
 pub struct Payhip {
     credentials: Arc<MarketCredentialStore>,
+    base_url: String,
 }
 
 impl Payhip {
-    pub fn new(credentials: Arc<MarketCredentialStore>) -> Self {
-        Self { credentials }
+    pub fn new(credentials: Arc<MarketCredentialStore>, base_url: String) -> Self {
+        Self { credentials, base_url }
     }
 }
 
@@ -40,7 +41,7 @@ impl MarketPort for Payhip {
         }
 
         let resp = reqwest::Client::new()
-            .get(format!("{}/api/v2/license/verify", creds.base_url))
+            .get(format!("{}/api/v2/license/verify", self.base_url))
             .query(&[("license_key", key)])
             .header("product-secret-key", &creds.api_key)
             .send()

@@ -344,7 +344,6 @@ async fn panel_licenses(
 
 struct MarketView {
     market: String,
-    base_url: String,
     active: bool,
     updated_at: String,
 }
@@ -353,20 +352,27 @@ struct MarketView {
 #[template(path = "panel/markets.html")]
 struct MarketsTemplate {
     markets: Vec<MarketView>,
+    available: Vec<String>,
 }
 
 async fn panel_markets(
     State(store): State<Arc<crate::domain::MarketCredentialStore>>,
+    State(license_use_cases): State<Arc<crate::use_cases::license::LicenseUseCases>>,
 ) -> impl IntoResponse {
-    let markets = store
+    let existing: Vec<MarketView> = store
         .list()
         .into_iter()
         .map(|c| MarketView {
             market: c.market,
-            base_url: c.base_url,
             active: c.active,
             updated_at: c.updated_at,
         })
         .collect();
-    MarketsTemplate { markets }
+    let available: Vec<String> = license_use_cases
+        .available_market_names()
+        .into_iter()
+        .filter(|name| !existing.iter().any(|m| m.market == *name))
+        .map(|s| s.to_string())
+        .collect();
+    MarketsTemplate { markets: existing, available }
 }

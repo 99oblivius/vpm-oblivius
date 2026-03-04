@@ -25,9 +25,13 @@ pub async fn init_state() -> anyhow::Result<AppState> {
         MarketCredentialStore::load(sqlite_arc.clone()).await?,
     );
 
-    let markets = Markets::new()
-        .add(Box::new(Payhip::new(credential_store.clone())))
-        .add(Box::new(Jinxxy::new(credential_store.clone())));
+    let mut markets = Markets::new();
+    if let Some(url) = &config.payhip_base_url {
+        markets = markets.add(Box::new(Payhip::new(credential_store.clone(), url.clone())));
+    }
+    if let Some(url) = &config.jinxxy_base_url {
+        markets = markets.add(Box::new(Jinxxy::new(credential_store.clone(), url.clone())));
+    }
 
     let gift_use_cases = GiftUseCases::new(sqlite_arc.clone());
     let license_use_cases = LicenseUseCases::new(sqlite_arc.clone(), Arc::new(markets));

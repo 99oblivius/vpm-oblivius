@@ -21,7 +21,6 @@ pub struct PackageVersion {
 #[derive(Debug, Clone, Serialize)]
 pub struct MarketCredentials {
     pub market: String,
-    pub base_url: String,
     #[serde(skip_serializing)]
     pub api_key: String,
     pub active: bool,

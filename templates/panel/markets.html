@@ -20,35 +20,23 @@
     <div class="col align-items-center content">
       <h1 class="m-0 mb-4">Market Configuration</h1>
 
+      {% if !available.is_empty() %}
       <div class="card p-4 mb-4" style="max-width:90%;">
         <h3 class="m-0 mb-2">Add Market</h3>
-        <div class="caption1 mb-3">Register a new market integration (e.g. Payhip, Gumroad).</div>
         <form onsubmit="return false;" class="row align-items-center" style="gap:0.5rem;">
-          <input
-            type="text"
-            class="text-field"
-            id="add-market-name"
-            placeholder="Market name (e.g. payhip)"
-            autocomplete="section-addmarket one-time-code"
-            style="flex:1;"
-          >
-          <input
-            type="text"
-            class="text-field"
-            id="add-market-url"
-            placeholder="Base URL (e.g. https://payhip.com)"
-            autocomplete="section-addmarket url"
-            style="flex:1;"
-          >
+          <select class="text-field" id="add-market-name" style="flex:1;">
+            {% for name in available %}
+            <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+          </select>
           <button class="btn btn-accent" onclick="
-            var name = document.getElementById('add-market-name').value.trim();
-            var url = document.getElementById('add-market-url').value.trim();
-            if(!name) { document.getElementById('add-market-name').focus(); return; }
-            if(!url) { document.getElementById('add-market-url').focus(); return; }
-            fetch('/api/markets/' + encodeURIComponent(name), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({base_url: url, active: false})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
+            var name = document.getElementById('add-market-name').value;
+            if(!name) return;
+            fetch('/api/markets/' + encodeURIComponent(name), {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({active: false})}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });
           ">Add Market</button>
         </form>
       </div>
+      {% endif %}
 
       {% if markets.is_empty() %}
       <div class="card p-5" style="max-width:90%; text-align:center;">
@@ -78,15 +66,6 @@
 
         <form onsubmit="return false;" class="col" style="gap:0.75rem;">
           <input
-            type="text"
-            class="text-field"
-            id="market-url-{{ market.market }}"
-            name="base_url"
-            placeholder="Base URL"
-            autocomplete="section-mkt-{{ market.market }} url"
-            value="{{ market.base_url }}"
-          >
-          <input
             type="password"
             class="text-field"
             id="market-key-{{ market.market }}"
@@ -98,9 +77,7 @@
             <button class="btn btn-accent" onclick="
               var form = this.closest('form');
               var body = {};
-              var url = form.querySelector('[name=base_url]').value;
               var key = form.querySelector('[name=api_key]').value;
-              if(url) body.base_url = url;
               if(key) body.api_key = key;
               if(Object.keys(body).length === 0) return;
               fetch('/api/markets/{{ market.market }}', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(function(r) { if(r.ok) location.reload(); else r.text().then(function(t) { alert(t); }); });

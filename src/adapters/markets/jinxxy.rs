@@ -7,11 +7,12 @@ use crate::domain::{MarketCredentialStore, MarketPort};
 
 pub struct Jinxxy {
     credentials: Arc<MarketCredentialStore>,
+    base_url: String,
 }
 
 impl Jinxxy {
-    pub fn new(credentials: Arc<MarketCredentialStore>) -> Self {
-        Self { credentials }
+    pub fn new(credentials: Arc<MarketCredentialStore>, base_url: String) -> Self {
+        Self { credentials, base_url }
     }
 
     fn is_uuid(s: &str) -> bool {
@@ -50,7 +51,7 @@ impl MarketPort for Jinxxy {
 
         // Look up license by full key
         let resp = client
-            .get(format!("{}/v1/licenses", creds.base_url))
+            .get(format!("{}/v1/licenses", self.base_url))
             .query(&[("key", key)])
             .header("x-api-key", &creds.api_key)
             .send()
@@ -78,7 +79,7 @@ impl MarketPort for Jinxxy {
 
         // Fetch full license details to get the product ID
         let resp = client
-            .get(format!("{}/v1/licenses/{}", creds.base_url, license_id))
+            .get(format!("{}/v1/licenses/{}", self.base_url, license_id))
             .header("x-api-key", &creds.api_key)
             .send()
             .await

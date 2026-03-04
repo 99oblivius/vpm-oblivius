@@ -24,6 +24,10 @@ impl Markets {
         self
     }
 
+    pub fn available_names(&self) -> Vec<&'static str> {
+        self.markets.iter().map(|m| m.name()).collect()
+    }
+
     pub fn any_format_match(&self, key: &str) -> bool {
         self.markets.iter().any(|m| m.check_format(key))
     }
@@ -61,6 +65,10 @@ impl LicenseUseCases {
         markets: Arc<Markets>,
     ) -> Self {
         Self { db, markets }
+    }
+
+    pub fn available_market_names(&self) -> Vec<&'static str> {
+        self.markets.available_names()
     }
 
     pub async fn redeem(&self, license: &str) -> AppResult<String> {

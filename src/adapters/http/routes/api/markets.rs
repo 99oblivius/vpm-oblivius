@@ -14,8 +14,9 @@ use tracing::info;
 
 use crate::{
     adapters::http::{app_state::AppState, bounded::Bounded},
-    app_error::AppResult,
+    app_error::{AppError, AppResult},
     domain::{MarketCredentialStore, MarketCredentials},
+    use_cases::license::LicenseUseCases,
 };
 
 pub fn router() -> Router<AppState> {
@@ -50,7 +51,6 @@ async fn markets_list(
 #[derive(Debug, Deserialize)]
 struct UpdatePayload {
     api_key: Option<Bounded<2048>>,
-    base_url: Option<Bounded<2048>>,
     active: Option<bool>,
 }
 
@@ -65,16 +65,19 @@ async fn market_delete(
 
 async fn market_update(
     State(store): State<Arc<MarketCredentialStore>>,
+    State(license_use_cases): State<Arc<LicenseUseCases>>,
     Path(name): Path<String>,
     Json(payload): Json<UpdatePayload>,
 ) -> AppResult<impl IntoResponse> {
+    if !license_use_cases.available_market_names().contains(&name.as_str()) {
+        return Err(AppError::BadRequest(format!("Unknown market: {name}")));
+    }
     info!("Market config update: {}", name);
 
     let now = Utc::now().to_rfc3339();
 
     let mut creds = store.get(&name).unwrap_or(MarketCredentials {
         market: name,
-        base_url: String::new(),
         api_key: String::new(),
         active: false,
         updated_at: String::new(),
@@ -82,9 +85,6 @@ async fn market_update(
 
     if let Some(key) = payload.api_key {
         creds.api_key = key.into();
-    }
-    if let Some(url) = payload.base_url {
-        creds.base_url = url.into();
     }
     if let Some(active) = payload.active {
         creds.active = active;

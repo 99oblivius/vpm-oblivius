@@ -21,6 +21,9 @@ pub struct AppConfig {
     pub brand_name: String,
     pub listing_id: String,
     pub listing_author: String,
+
+    pub payhip_base_url: Option<String>,
+    pub jinxxy_base_url: Option<String>,
 }
 
 impl AppConfig {
@@ -64,6 +67,9 @@ impl AppConfig {
         let listing_id = env::var("VPM_LISTING_ID").unwrap_or("com.example.vpm".into());
         let listing_author = env::var("VPM_LISTING_AUTHOR").unwrap_or("VPM".into());
 
+        let payhip_base_url = env::var("PAYHIP_BASE_URL").ok();
+        let jinxxy_base_url = env::var("JINXXY_BASE_URL").ok();
+
         Self {
             serve_addr,
 
@@ -82,6 +88,9 @@ impl AppConfig {
             brand_name,
             listing_id,
             listing_author,
+
+            payhip_base_url,
+            jinxxy_base_url,
         }
     }
 }
