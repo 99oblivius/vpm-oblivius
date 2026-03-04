@@ -24,6 +24,7 @@ pub struct AppConfig {
 
     pub payhip_base_url: Option<String>,
     pub jinxxy_base_url: Option<String>,
+    pub gumroad_base_url: Option<String>,
 }
 
 impl AppConfig {
@@ -69,6 +70,7 @@ impl AppConfig {
 
         let payhip_base_url = env::var("PAYHIP_BASE_URL").ok();
         let jinxxy_base_url = env::var("JINXXY_BASE_URL").ok();
+        let gumroad_base_url = env::var("GUMROAD_BASE_URL").ok();
 
         Self {
             serve_addr,
@@ -91,6 +93,7 @@ impl AppConfig {
 
             payhip_base_url,
             jinxxy_base_url,
+            gumroad_base_url,
         }
     }
 }

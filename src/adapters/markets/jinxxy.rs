@@ -37,7 +37,7 @@ impl MarketPort for Jinxxy {
         Self::is_uuid(key)
     }
 
-    async fn verify_key(&self, key: &str) -> AppResult<Option<String>> {
+    async fn verify_key(&self, key: &str, _linked_product_ids: &[String]) -> AppResult<Option<String>> {
         let creds = self
             .credentials
             .get(self.name())

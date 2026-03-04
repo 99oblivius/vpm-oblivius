@@ -18,6 +18,7 @@ pub trait LicenseRepository: Send + Sync {
     async fn delete(&self, license: &str) -> AppResult<()>;
     async fn increment_use_count(&self, token: &str) -> AppResult<()>;
     async fn get_package_uid_by_market_product(&self, market: &str, product_id: &str) -> AppResult<Option<String>>;
+    async fn get_product_ids_for_market(&self, market: &str) -> AppResult<Vec<String>>;
 }
 
 #[async_trait]
@@ -56,6 +57,6 @@ pub struct VerifyResult {
 pub trait MarketPort: Send + Sync {
     fn name(&self) -> &'static str;
     fn check_format(&self, key: &str) -> bool;
-    async fn verify_key(&self, key: &str) -> AppResult<Option<String>>;
+    async fn verify_key(&self, key: &str, linked_product_ids: &[String]) -> AppResult<Option<String>>;
     async fn decrement_use(&self, _key: &str) -> AppResult<()> { Ok(()) }
 }

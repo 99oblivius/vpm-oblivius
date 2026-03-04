@@ -5,7 +5,7 @@ use tracing_subscriber::{filter::EnvFilter, fmt, prelude::*};
 use crate::{
     adapters::{
         http::app_state::{AppState, AuthState},
-        markets::{Jinxxy, Payhip},
+        markets::{Gumroad, Jinxxy, Payhip},
     },
     domain::MarketCredentialStore,
     infra::{config::AppConfig, sqlite_database},
@@ -31,6 +31,9 @@ pub async fn init_state() -> anyhow::Result<AppState> {
     }
     if let Some(url) = &config.jinxxy_base_url {
         markets = markets.add(Box::new(Jinxxy::new(credential_store.clone(), url.clone())));
+    }
+    if let Some(url) = &config.gumroad_base_url {
+        markets = markets.add(Box::new(Gumroad::new(credential_store.clone(), url.clone())));
     }
 
     let gift_use_cases = GiftUseCases::new(sqlite_arc.clone());

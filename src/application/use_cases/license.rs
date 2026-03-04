@@ -38,16 +38,22 @@ impl Markets {
         }
     }
 
-    pub async fn verify_parallel(&self, key: &str) -> Option<VerifyResult> {
-        let futures = self.markets
+    pub async fn verify_parallel(&self, key: &str, db: &dyn LicenseRepository) -> Option<VerifyResult> {
+        let matching: Vec<_> = self.markets
             .iter()
             .filter(|m| m.check_format(key))
-            .map(|market| async move {
-                market.verify_key(key).await.ok().flatten().map(|product_id| VerifyResult {
+            .collect();
+
+        let mut futures = Vec::new();
+        for market in &matching {
+            let product_ids = db.get_product_ids_for_market(market.name()).await.unwrap_or_default();
+            futures.push(async move {
+                market.verify_key(key, &product_ids).await.ok().flatten().map(|product_id| VerifyResult {
                     market: market.name().to_string(),
                     product_id,
                 })
             });
+        }
 
         join_all(futures).await.into_iter().flatten().next()
     }
@@ -90,7 +96,7 @@ impl LicenseUseCases {
             return Err(AppError::InvalidLicense);
         }
 
-        let result = self.markets.verify_parallel(license).await
+        let result = self.markets.verify_parallel(license, self.db.as_ref()).await
             .ok_or(AppError::InvalidLicense)?;
 
         let uid = match self.db

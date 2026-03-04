@@ -30,7 +30,7 @@ impl MarketPort for Payhip {
                 .all(|p| p.len() == 5 && p.chars().all(|c| c.is_ascii_alphanumeric()))
     }
 
-    async fn verify_key(&self, key: &str) -> AppResult<Option<String>> {
+    async fn verify_key(&self, key: &str, _linked_product_ids: &[String]) -> AppResult<Option<String>> {
         let creds = self
             .credentials
             .get(self.name())

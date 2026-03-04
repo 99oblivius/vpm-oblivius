@@ -148,4 +148,14 @@ impl LicenseRepository for SqliteDatabase {
         .await
         .map_err(AppError::from)
     }
+
+    async fn get_product_ids_for_market(&self, market: &str) -> AppResult<Vec<String>> {
+        sqlx::query_scalar::<_, String>(
+            "SELECT product_id FROM package_markets WHERE market = $1",
+        )
+        .bind(market)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(AppError::from)
+    }
 }
