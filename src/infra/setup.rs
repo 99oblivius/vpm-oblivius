@@ -5,7 +5,7 @@ use tracing_subscriber::{filter::EnvFilter, fmt, prelude::*};
 use crate::{
     adapters::{
         http::app_state::{AppState, AuthState},
-        markets::Payhip,
+        markets::{Jinxxy, Payhip},
     },
     domain::MarketCredentialStore,
     infra::{config::AppConfig, sqlite_database},
@@ -26,7 +26,8 @@ pub async fn init_state() -> anyhow::Result<AppState> {
     );
 
     let markets = Markets::new()
-        .add(Box::new(Payhip::new(credential_store.clone())));
+        .add(Box::new(Payhip::new(credential_store.clone())))
+        .add(Box::new(Jinxxy::new(credential_store.clone())));
 
     let gift_use_cases = GiftUseCases::new(sqlite_arc.clone());
     let license_use_cases = LicenseUseCases::new(sqlite_arc.clone(), Arc::new(markets));
