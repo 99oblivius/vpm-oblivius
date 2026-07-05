@@ -36,7 +36,7 @@ Clicks "Add to VCC"  →  package appears in Creator Companion
 
 ## Features
 
-- Automatic purchase verification (Payhip out of the box, trait-based marketplace architecture for adding others with minimal code)
+- Automatic purchase verification (Payhip/Jinxxy/Gumroad out of the box, trait-based marketplace architecture for adding others with minimal code)
 - VPM-compliant listing feeds that VCC understands natively
 - Gift code generation for giveaways, testers, or collaborators
 - Admin panel for package uploads with intuitive versioning, license management, and marketplace linking
@@ -53,7 +53,7 @@ Clicks "Add to VCC"  →  package appears in Creator Companion
 
 ## Good to know
 
-- Only Payhip is supported as a marketplace right now. The architecture is built to support others, but no additional adapters exist yet.
+- Payhip, Jinxxy, and Gumroad are supported as marketplaces right now. The architecture is built to support others.
 - Each license gives access to one package. Multiple packages require separate purchases/keys.
 - There is no built-in HTTPS. Run it behind a reverse proxy (Nginx, Caddy, Traefik, etc).
 - SQLite-backed, designed for single-instance deployments.
